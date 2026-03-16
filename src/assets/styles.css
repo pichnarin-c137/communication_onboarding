@@ -1,0 +1,342 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2563EB;
+  --color-primary-dark: #1E40AF;
+  --color-primary-light: #DBEAFE;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-surface: #FFFFFF;
+  --color-background: #F9FAFB;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+}
+
+/* Smooth page transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* Dropdown slide-down transition */
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.15s ease;
+  transform-origin: top;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+}
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Pull to refresh animation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin 1s linear infinite;
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Star rating */
+.star-rating .star {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+/* Toast animation */
+.toast-enter-active {
+  transition: all 0.3s ease;
+}
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+/* Progress bar animation */
+.progress-bar-fill {
+  transition: width 0.6s ease;
+}
+
+/* Bottom nav safe area for mobile */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+/* Touch-friendly tap targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ─── FullCalendar Overrides ─── */
+:root {
+  --fc-border-color: #E5E7EB;
+  --fc-button-bg-color: #FFFFFF;
+  --fc-button-border-color: #D1D5DB;
+  --fc-button-text-color: #374151;
+  --fc-button-hover-bg-color: #F3F4F6;
+  --fc-button-hover-border-color: #9CA3AF;
+  --fc-button-active-bg-color: #2563EB;
+  --fc-button-active-border-color: #2563EB;
+  --fc-today-bg-color: #EFF6FF;
+  --fc-now-indicator-color: #EF4444;
+  --fc-event-border-color: transparent;
+  --fc-page-bg-color: #FFFFFF;
+  --fc-neutral-bg-color: #F9FAFB;
+}
+
+.fc {
+  font-family: inherit;
+}
+
+.fc .fc-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fc .fc-button {
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.fc .fc-button:focus {
+  box-shadow: 0 0 0 2px #DBEAFE;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: #2563EB;
+  border-color: #2563EB;
+  color: #FFFFFF;
+}
+
+.fc .fc-col-header-cell {
+  padding: 0.5rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #6B7280;
+  background-color: #F9FAFB;
+}
+
+.fc .fc-daygrid-day-number {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 0.5rem;
+  color: #374151;
+}
+
+.fc .fc-day-today .fc-daygrid-day-number {
+  background-color: #2563EB;
+  color: #FFFFFF;
+  border-radius: 9999px;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.25rem;
+}
+
+.fc .fc-daygrid-day-frame {
+  min-height: 80px;
+}
+
+.fc .fc-event {
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.fc .fc-event:hover {
+  opacity: 0.85;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  border-color: #EF4444;
+  border-width: 2px;
+}
+
+.fc .fc-timegrid-now-indicator-arrow {
+  border-color: #EF4444;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+/* Event type color classes */
+.fc-event-demo {
+  background-color: #FDE68A !important;
+  border-left: 3px solid #F59E0B !important;
+  color: #92400E !important;
+}
+
+.fc-event-training {
+  background-color: #99F6E4 !important;
+  border-left: 3px solid #14B8A6 !important;
+  color: #134E4A !important;
+}
+
+.fc-event-completed {
+  opacity: 0.65;
+  position: relative;
+}
+
+.fc-event-completed::after {
+  content: '\2713';
+  position: absolute;
+  top: 0.125rem;
+  right: 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+/* List view styling */
+.fc .fc-list-event-dot {
+  border-radius: 50%;
+}
+
+.fc .fc-list-day-cushion {
+  background-color: #F9FAFB;
+  font-weight: 600;
+}
+
+/* ─── Month View: Badge Indicators ─── */
+.fc-dayGridMonth-view .fc-more-link {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.125rem;
+}
+
+.fc-dayGridMonth-view .fc-more-link:hover {
+  text-decoration: none;
+}
+
+.fc-day-event-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  background-color: #2563EB;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Selected day highlight in month view */
+.fc-dayGridMonth-view .fc-daygrid-day.fc-day-selected {
+  background-color: #EFF6FF;
+  box-shadow: inset 0 0 0 2px #2563EB;
+}
+
+/* Month view clickable cells */
+.fc-dayGridMonth-view .fc-daygrid-day {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.fc-dayGridMonth-view .fc-daygrid-day:hover {
+  background-color: #F9FAFB;
+}
+
+/* Responsive toolbar stacking */
+@media (max-width: 640px) {
+  .fc .fc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+  .fc .fc-daygrid-day-frame {
+    min-height: 60px;
+  }
+}
