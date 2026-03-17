@@ -46,5 +46,11 @@ export default [
     name: 'TrainerProfile',
     component: () => import('@/modules/auth/views/ProfileView.vue'),
     meta: { layout: 'trainer', title: 'Profile Settings', role: 'trainer' }
+  },
+  {
+    path: '/trainer/notifications',
+    name: 'TrainerNotifications',
+    component: () => import('@/modules/trainer/views/NotificationView.vue'),
+    meta: { layout: 'trainer', title: 'Notifications', role: 'trainer' }
   }
 ]

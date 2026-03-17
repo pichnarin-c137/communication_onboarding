@@ -9,48 +9,13 @@
           <h1 class="text-xl font-bold text-gray-900">{{ authStore.user?.first_name }}</h1>
         </div>
       </div>
-      <button
-        @click="loadNotifications"
-        class="relative p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+      <router-link
+        to="/trainer/appointments"
+        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
       >
-        <BellIcon class="w-6 h-6" />
-        <span v-if="notificationStore.unreadCount > 0" class="absolute top-1.5 right-1.5 min-w-[16px] h-4 bg-red-500 rounded-full border-2 border-white text-[10px] text-white font-bold flex items-center justify-center px-0.5">
-          {{ notificationStore.unreadCount > 9 ? '9+' : notificationStore.unreadCount }}
-        </span>
-      </button>
-    </div>
-
-    <!-- Notifications Panel -->
-    <div v-if="showNotifications" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
-        <div class="flex items-center gap-2">
-          <button v-if="notificationStore.unreadCount > 0" @click="notificationStore.markAllAsRead()" class="text-xs text-primary hover:underline">
-            Mark all read
-          </button>
-          <button @click="showNotifications = false" class="p-1 text-gray-400 hover:text-gray-600">
-            <XMarkIcon class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-      <div v-if="notificationStore.loading" class="p-4 space-y-2">
-        <div v-for="i in 3" :key="i" class="h-12 bg-gray-100 rounded animate-pulse"></div>
-      </div>
-      <div v-else-if="notificationStore.notifications.length === 0" class="py-8 text-center">
-        <p class="text-sm text-gray-500">No notifications</p>
-      </div>
-      <div v-else class="divide-y divide-gray-50 max-h-64 overflow-y-auto">
-        <div
-          v-for="n in notificationStore.notifications"
-          :key="n.id"
-          :class="['px-4 py-3 text-sm transition-colors cursor-pointer', n.is_read ? 'text-gray-500' : 'bg-blue-50/50 text-gray-900']"
-          @click="notificationStore.markAsRead(n.id)"
-        >
-          <p class="font-medium">{{ n.title }}</p>
-          <p class="text-xs mt-0.5 line-clamp-2">{{ n.message }}</p>
-          <p class="text-xs text-gray-400 mt-1">{{ formatNotificationTime(n.created_at) }}</p>
-        </div>
-      </div>
+        <PlusIcon class="w-4 h-4" />
+        New Appointment
+      </router-link>
     </div>
 
     <!-- Quick Stats -->
@@ -198,15 +163,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  BellIcon,
+  PlusIcon,
   CalendarDaysIcon,
   ClipboardDocumentListIcon,
   ClockIcon
 } from '@heroicons/vue/24/outline'
-import { CheckBadgeIcon, XMarkIcon } from '@heroicons/vue/24/solid'
+import { CheckBadgeIcon } from '@heroicons/vue/24/solid'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useTrainerStore } from '@/modules/trainer/store/trainer.js'
-import { useNotificationStore } from '@/modules/shared/store/notifications.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import Avatar from '@/modules/shared/components/Avatar.vue'
 import StatsCard from '@/modules/trainer/components/StatsCard.vue'
@@ -216,10 +180,8 @@ import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const trainerStore = useTrainerStore()
-const notificationStore = useNotificationStore()
 const { formatDateMed: formatDate, formatTime, formatDateTimeFromISO } = useDateTime()
 
-const showNotifications = ref(false)
 const loading = ref(true)
 
 const summary = computed(() => trainerStore.dashboardData?.summary || {
@@ -238,23 +200,9 @@ const todayAppointments = computed(() => {
     .sort((a, b) => (a.scheduled_start_time || '').localeCompare(b.scheduled_start_time || ''))
 })
 
-function formatNotificationTime(isoStr) {
-  return formatDateTimeFromISO(isoStr)
-}
-
-async function loadNotifications() {
-  showNotifications.value = !showNotifications.value
-  if (showNotifications.value) {
-    await notificationStore.fetchNotifications()
-  }
-}
-
 onMounted(async () => {
   try {
-    await Promise.all([
-      trainerStore.fetchDashboard(),
-      notificationStore.fetchUnreadCount()
-    ])
+    await trainerStore.fetchDashboard()
   } finally {
     loading.value = false
   }

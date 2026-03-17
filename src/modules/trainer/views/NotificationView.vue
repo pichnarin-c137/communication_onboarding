@@ -238,10 +238,10 @@ function resolveNotificationRoute(n) {
   const entityId = n.related_entity_id
   if (!entityType || !entityId) return null
   if (entityType === 'appointment') {
-    return authStore.isTrainer ? `/trainer/appointments/${entityId}` : `/sales/appointments/${entityId}`
+    return `/trainer/appointments/${entityId}`
   }
   if (entityType === 'onboarding') {
-    return authStore.isTrainer ? `/trainer/onboarding/${entityId}` : `/sales/onboarding/${entityId}`
+    return `/trainer/onboarding/${entityId}`
   }
   return null
 }

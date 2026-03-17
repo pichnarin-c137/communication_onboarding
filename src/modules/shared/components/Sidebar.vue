@@ -20,7 +20,7 @@
     <!-- ── Logo header ── -->
     <div
       :class="[
-        'h-14 flex items-center px-3 border-b border-gray-100 flex-shrink-0',
+        'h-16 flex items-center px-3 border-b border-gray-100 flex-shrink-0',
         showLabels ? 'justify-between' : 'justify-center'
       ]"
     >
@@ -43,11 +43,9 @@
       </button>
     </div>
 
-    <!-- ── Scrollable body: nav items OR notifications ── -->
+    <!-- ── Scrollable body: nav items ── -->
     <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0">
-
-      <!-- Nav view -->
-      <div v-if="!showNotifications" class="p-2">
+      <div class="p-2">
         <nav class="space-y-5">
           <div v-for="group in navGroups" :key="group.label">
             <h3
@@ -125,128 +123,10 @@
           </div>
         </nav>
       </div>
-
-      <!-- Notifications view -->
-      <div v-else>
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
-          <div class="flex items-center gap-2">
-            <button
-              v-if="notificationStore.unreadCount > 0"
-              @click="notificationStore.markAllAsRead()"
-              class="text-xs text-primary hover:underline"
-            >
-              Mark all read
-            </button>
-            <button
-              @click="showNotifications = false"
-              class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
-            >
-              <XMarkIcon class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-        <div v-if="notificationStore.loading" class="p-4 space-y-3">
-          <div v-for="i in 4" :key="i" class="h-14 bg-gray-100 rounded-lg animate-pulse"></div>
-        </div>
-        <div v-else-if="notificationStore.notifications.length === 0" class="py-14 text-center">
-          <BellIcon class="w-10 h-10 text-gray-200 mx-auto mb-3" />
-          <p class="text-sm text-gray-400">No notifications yet</p>
-        </div>
-        <div v-else class="divide-y divide-gray-50">
-          <div
-            v-for="n in notificationStore.notifications"
-            :key="n.id"
-            :class="[
-              'px-4 py-3.5 cursor-pointer hover:bg-gray-50 transition-colors',
-              !n.is_read ? 'bg-blue-50/40' : ''
-            ]"
-            @click="handleNotificationClick(n)"
-          >
-            <div class="flex items-start gap-2.5">
-              <!-- Type icon -->
-              <div
-                :class="notificationMeta(n.type).bgClass"
-                class="mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-              >
-                <component :is="notificationMeta(n.type).icon" :class="notificationMeta(n.type).iconClass" class="w-3.5 h-3.5" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <p class="text-sm font-semibold text-gray-900 leading-snug truncate">{{ n.title }}</p>
-                  <span v-if="!n.is_read" class="w-2 h-2 rounded-full bg-primary flex-shrink-0"></span>
-                </div>
-                <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ n.message }}</p>
-                <p class="text-xs text-gray-400 mt-1">{{ formatTime(n.created_at) }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ── Bottom section ── -->
     <div class="flex-shrink-0 border-t border-gray-100">
-
-      <!-- Notification toggle button -->
-      <div class="p-2">
-        <button
-          @click="toggleNotifications"
-          :class="[
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
-            showNotifications
-              ? 'bg-primary/10 text-primary'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50',
-            !showLabels ? 'justify-center' : ''
-          ]"
-          :title="!showLabels ? 'Notifications' : undefined"
-        >
-          <BellIcon class="w-5 h-5 flex-shrink-0" />
-          <span v-if="showLabels" class="flex-1 text-left">Notifications</span>
-          <!-- Badge - expanded -->
-          <span
-            v-if="notificationStore.unreadCount > 0 && showLabels"
-            class="ml-auto bg-red-500 text-white text-[10px] font-bold min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center"
-          >
-            {{ notificationStore.unreadCount > 9 ? '9+' : notificationStore.unreadCount }}
-          </span>
-          <!-- Badge - collapsed icon dot -->
-          <span
-            v-if="notificationStore.unreadCount > 0 && !showLabels"
-            class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"
-          ></span>
-        </button>
-      </div>
-
-      <!-- User card (expanded) -->
-      <div v-if="showLabels" class="px-3 pb-3">
-        <div class="flex items-center gap-2.5 px-2.5 py-2.5 bg-gray-50 rounded-xl">
-          <Avatar :name="userDisplayName" size="sm" />
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-900 truncate leading-tight">{{ userDisplayName }}</p>
-            <p class="text-xs text-gray-500 capitalize leading-tight mt-0.5">{{ authStore.user?.role }}</p>
-          </div>
-          <button
-            @click="handleLogout"
-            title="Sign Out"
-            class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-          >
-            <ArrowRightOnRectangleIcon class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- User icon (collapsed) -->
-      <div v-else class="px-2 pb-2">
-        <button
-          @click="handleLogout"
-          title="Sign Out"
-          class="w-full flex items-center justify-center py-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-        >
-          <ArrowRightOnRectangleIcon class="w-5 h-5" />
-        </button>
-      </div>
-
       <!-- Collapse toggle (desktop only) -->
       <div class="hidden lg:block p-2 border-t border-gray-100">
         <button
@@ -267,30 +147,17 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   XMarkIcon,
-  BellIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   ArrowRightOnRectangleIcon,
-  CalendarDaysIcon,
-  PlayCircleIcon,
-  ArrowPathIcon,
-  XCircleIcon,
-  UsersIcon,
-  CheckCircleIcon,
-  BriefcaseIcon,
-  FlagIcon,
-  TrophyIcon,
-  StarIcon,
-  MapPinIcon,
 } from '@heroicons/vue/24/outline'
 import Avatar from './Avatar.vue'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
-import { useNotificationStore } from '@/modules/shared/store/notifications.js'
 
 const props = defineProps({
   open: { type: Boolean, default: true },
@@ -300,14 +167,12 @@ const props = defineProps({
   homeRoute: { type: String, default: '/' }
 })
 
-const emit = defineEmits(['close', 'toggle-collapse'])
+defineEmits(['close', 'toggle-collapse'])
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const notificationStore = useNotificationStore()
 
-const showNotifications = ref(false)
 const openDropdowns = reactive({})
 
 function toggleDropdown(label) {
@@ -334,78 +199,8 @@ function isActive(path) {
   return route.path.startsWith(path + '/')
 }
 
-function formatTime(dateStr) {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-}
-
-const notificationTypeMap = {
-  // Appointment lifecycle — bidirectional between sale & trainer
-  appointment_assigned:         { icon: BriefcaseIcon,      bgClass: 'bg-blue-100',    iconClass: 'text-blue-600' },
-  appointment_leave_office:     { icon: MapPinIcon,          bgClass: 'bg-amber-100',   iconClass: 'text-amber-600' },
-  appointment_started:          { icon: PlayCircleIcon,     bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
-  appointment_completed:        { icon: CheckCircleIcon,    bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
-  appointment_cancelled:        { icon: XCircleIcon,        bgClass: 'bg-red-100',     iconClass: 'text-red-600' },
-  appointment_rescheduled:      { icon: ArrowPathIcon,      bgClass: 'bg-amber-100',   iconClass: 'text-amber-600' },
-  // Session lifecycle (legacy types)
-  session_created:              { icon: CalendarDaysIcon,   bgClass: 'bg-blue-100',    iconClass: 'text-blue-600' },
-  session_started:              { icon: PlayCircleIcon,     bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
-  session_completed:            { icon: CheckCircleIcon,    bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
-  session_rescheduled:          { icon: ArrowPathIcon,      bgClass: 'bg-amber-100',   iconClass: 'text-amber-600' },
-  session_cancelled:            { icon: XCircleIcon,        bgClass: 'bg-red-100',     iconClass: 'text-red-600' },
-  student_attendance_submitted: { icon: UsersIcon,          bgClass: 'bg-purple-100',  iconClass: 'text-purple-600' },
-  // Assignment
-  assignment_created:           { icon: BriefcaseIcon,      bgClass: 'bg-blue-100',    iconClass: 'text-blue-600' },
-  assignment_accepted:          { icon: CheckCircleIcon,    bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
-  assignment_rejected:          { icon: XCircleIcon,        bgClass: 'bg-red-100',     iconClass: 'text-red-600' },
-  // Progress milestones
-  stage_completed:              { icon: FlagIcon,           bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
-  training_completed:           { icon: TrophyIcon,         bgClass: 'bg-yellow-100',  iconClass: 'text-yellow-600' },
-  onboarding_completed:         { icon: StarIcon,           bgClass: 'bg-yellow-100',  iconClass: 'text-yellow-600' },
-}
-
-function notificationMeta(type) {
-  return notificationTypeMap[type] || { icon: BellIcon, bgClass: 'bg-gray-100', iconClass: 'text-gray-500' }
-}
-
-async function toggleNotifications() {
-  showNotifications.value = !showNotifications.value
-  if (showNotifications.value && !notificationStore.notifications.length) {
-    await notificationStore.fetchNotifications()
-  }
-}
-
-function resolveNotificationRoute(n) {
-  const entityType = n.related_entity_type
-  const entityId = n.related_entity_id
-  if (!entityType || !entityId) return null
-  if (entityType === 'appointment') {
-    return authStore.isTrainer ? `/trainer/appointments/${entityId}` : `/sales/appointments/${entityId}`
-  }
-  if (entityType === 'onboarding') {
-    return authStore.isTrainer ? `/trainer/onboarding/${entityId}` : `/sales/onboarding/${entityId}`
-  }
-  return null
-}
-
-async function handleNotificationClick(n) {
-  if (!n.is_read) {
-    await notificationStore.markAsRead(n.id)
-  }
-  const dest = resolveNotificationRoute(n)
-  if (dest) {
-    showNotifications.value = false
-    emit('close')
-    router.push(dest)
-  }
-}
-
 async function handleLogout() {
   router.replace('/login')
   await authStore.logout()
 }
-
-onMounted(() => {
-  notificationStore.fetchUnreadCount()
-})
 </script>

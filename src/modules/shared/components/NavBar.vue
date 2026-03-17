@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-40 h-16">
+  <header class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-40 h-16">
     <div class="flex items-center h-full">
 
       <!-- Logo: width matches sidebar exactly -->
@@ -58,51 +58,96 @@
             </span>
           </button>
 
-          <!-- Notification dropdown — anchored to bell button -->
+          <!-- Notification dropdown — enhanced Facebook style -->
           <Transition name="slide-down">
             <div
               v-if="showNotifications"
-              class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden"
+              class="absolute right-0 top-full mt-2 w-96 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col"
+              style="max-height: 520px"
             >
-              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
+              <!-- Dropdown header -->
+              <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+                <h3 class="text-base font-bold text-gray-900">Notifications</h3>
                 <button
                   v-if="notificationStore.unreadCount > 0"
                   @click.stop="notificationStore.markAllAsRead()"
-                  class="text-xs text-primary hover:underline"
+                  class="text-xs font-medium text-primary hover:underline"
                 >
                   Mark all read
                 </button>
               </div>
-              <div v-if="notificationStore.loading" class="p-4 space-y-2">
-                <div v-for="i in 3" :key="i" class="h-12 bg-gray-100 rounded animate-pulse"></div>
-              </div>
-              <div v-else-if="notificationStore.notifications.length === 0" class="py-8 text-center">
-                <BellIcon class="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p class="text-sm text-gray-500">No notifications yet</p>
-              </div>
-              <div v-else class="divide-y divide-gray-50 max-h-80 overflow-y-auto">
-                <div
-                  v-for="n in notificationStore.notifications"
-                  :key="n.id"
-                  :class="[
-                    'px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 transition-colors',
-                    n.is_read ? 'text-gray-500' : 'bg-blue-50/30 text-gray-900'
-                  ]"
-                  @click="handleNotificationClick(n)"
-                >
-                  <div class="flex items-start gap-2">
-                    <span
-                      v-if="!n.is_read"
-                      class="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"
-                    ></span>
-                    <div :class="n.is_read ? 'pl-3.5' : ''">
-                      <p class="font-medium leading-snug">{{ n.title }}</p>
-                      <p class="text-xs mt-0.5 line-clamp-2 text-gray-500">{{ n.message }}</p>
-                      <p class="text-xs text-gray-400 mt-1">{{ formatTime(n.created_at) }}</p>
-                    </div>
+
+              <!-- Loading skeleton -->
+              <div v-if="notificationStore.loading" class="p-4 space-y-3 overflow-y-auto">
+                <div v-for="i in 4" :key="i" class="flex items-start gap-3">
+                  <div class="w-8 h-8 bg-gray-100 rounded-lg animate-pulse flex-shrink-0"></div>
+                  <div class="flex-1 space-y-1.5">
+                    <div class="h-3.5 bg-gray-100 rounded animate-pulse w-3/4"></div>
+                    <div class="h-3 bg-gray-100 rounded animate-pulse w-full"></div>
+                    <div class="h-2.5 bg-gray-100 rounded animate-pulse w-1/3"></div>
                   </div>
                 </div>
+              </div>
+
+              <!-- Empty state -->
+              <div v-else-if="notificationStore.notifications.length === 0" class="py-12 text-center flex-1">
+                <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <BellIcon class="w-7 h-7 text-gray-400" />
+                </div>
+                <p class="text-sm font-medium text-gray-700">No notifications yet</p>
+                <p class="text-xs text-gray-400 mt-1">We'll notify you when something arrives</p>
+              </div>
+
+              <!-- Grouped notification list -->
+              <div v-else class="overflow-y-auto flex-1">
+                <template v-for="group in groupedNotifications" :key="group.label">
+                  <!-- Date group label -->
+                  <div class="px-4 py-2 bg-gray-50 sticky top-0 z-10 border-b border-gray-100">
+                    <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">{{ group.label }}</span>
+                  </div>
+                  <!-- Items in this group -->
+                  <div
+                    v-for="n in group.items"
+                    :key="n.id"
+                    :class="[
+                      'px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-50',
+                      !n.is_read ? 'bg-blue-50/30' : ''
+                    ]"
+                    @click="handleNotificationClick(n)"
+                  >
+                    <div class="flex items-start gap-3">
+                      <!-- Type icon -->
+                      <div
+                        :class="notificationMeta(n.type).bgClass"
+                        class="mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      >
+                        <component :is="notificationMeta(n.type).icon" :class="notificationMeta(n.type).iconClass" class="w-4 h-4" />
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2">
+                          <p :class="['text-sm leading-snug', n.is_read ? 'font-normal text-gray-600' : 'font-semibold text-gray-900']">
+                            {{ n.title }}
+                          </p>
+                          <span v-if="!n.is_read" class="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0"></span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ n.message }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ formatRelativeTime(n.created_at) }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Sticky footer: see all -->
+              <div class="flex-shrink-0 border-t border-gray-100 bg-white">
+                <router-link
+                  :to="notificationsRoute"
+                  class="flex items-center justify-center gap-1.5 py-3 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors"
+                  @click="showNotifications = false"
+                >
+                  See all notifications
+                  <ChevronRightIcon class="w-4 h-4" />
+                </router-link>
               </div>
             </div>
           </Transition>
@@ -173,7 +218,25 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { BellIcon, Bars3Icon, ChevronDownIcon, UserIcon, ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline'
+import {
+  BellIcon,
+  Bars3Icon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  UserIcon,
+  ArrowRightOnRectangleIcon,
+  CalendarDaysIcon,
+  PlayCircleIcon,
+  ArrowPathIcon,
+  XCircleIcon,
+  UsersIcon,
+  CheckCircleIcon,
+  BriefcaseIcon,
+  FlagIcon,
+  TrophyIcon,
+  StarIcon,
+  MapPinIcon,
+} from '@heroicons/vue/24/outline'
 import Avatar from './Avatar.vue'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useNotificationStore } from '@/modules/shared/store/notifications.js'
@@ -197,6 +260,7 @@ const showNotifications = ref(false)
 
 const homeRoute = computed(() => props.role === 'trainer' ? '/trainer' : '/sales')
 const profileRoute = computed(() => props.role === 'trainer' ? '/trainer/profile' : '/sales/profile')
+const notificationsRoute = computed(() => props.role === 'trainer' ? '/trainer/notifications' : '/sales/configurations/notifications')
 
 const userDisplayName = computed(() => {
   const u = props.user
@@ -204,13 +268,80 @@ const userDisplayName = computed(() => {
   return u.full_name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || ''
 })
 
-function isActive(path) {
-  return route.path === path || route.path.startsWith(path + '/')
+// ── Notification type map ──────────────────────────────────────────────────
+const notificationTypeMap = {
+  appointment_assigned:         { icon: BriefcaseIcon,    bgClass: 'bg-blue-100',    iconClass: 'text-blue-600' },
+  appointment_leave_office:     { icon: MapPinIcon,        bgClass: 'bg-amber-100',   iconClass: 'text-amber-600' },
+  appointment_started:          { icon: PlayCircleIcon,   bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
+  appointment_completed:        { icon: CheckCircleIcon,  bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
+  appointment_cancelled:        { icon: XCircleIcon,      bgClass: 'bg-red-100',     iconClass: 'text-red-600' },
+  appointment_rescheduled:      { icon: ArrowPathIcon,    bgClass: 'bg-amber-100',   iconClass: 'text-amber-600' },
+  session_created:              { icon: CalendarDaysIcon, bgClass: 'bg-blue-100',    iconClass: 'text-blue-600' },
+  session_started:              { icon: PlayCircleIcon,   bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
+  session_completed:            { icon: CheckCircleIcon,  bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
+  session_rescheduled:          { icon: ArrowPathIcon,    bgClass: 'bg-amber-100',   iconClass: 'text-amber-600' },
+  session_cancelled:            { icon: XCircleIcon,      bgClass: 'bg-red-100',     iconClass: 'text-red-600' },
+  student_attendance_submitted: { icon: UsersIcon,        bgClass: 'bg-purple-100',  iconClass: 'text-purple-600' },
+  assignment_created:           { icon: BriefcaseIcon,    bgClass: 'bg-blue-100',    iconClass: 'text-blue-600' },
+  assignment_accepted:          { icon: CheckCircleIcon,  bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
+  assignment_rejected:          { icon: XCircleIcon,      bgClass: 'bg-red-100',     iconClass: 'text-red-600' },
+  stage_completed:              { icon: FlagIcon,         bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
+  training_completed:           { icon: TrophyIcon,       bgClass: 'bg-yellow-100',  iconClass: 'text-yellow-600' },
+  onboarding_completed:         { icon: StarIcon,         bgClass: 'bg-yellow-100',  iconClass: 'text-yellow-600' },
 }
 
-function formatTime(dateStr) {
+function notificationMeta(type) {
+  return notificationTypeMap[type] || { icon: BellIcon, bgClass: 'bg-gray-100', iconClass: 'text-gray-500' }
+}
+
+// ── Date grouping ──────────────────────────────────────────────────────────
+function groupByDate(items) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  const groups = { Today: [], Yesterday: [], Earlier: [] }
+  for (const item of items) {
+    const d = new Date(item.created_at)
+    d.setHours(0, 0, 0, 0)
+    if (d.getTime() === today.getTime()) {
+      groups.Today.push(item)
+    } else if (d.getTime() === yesterday.getTime()) {
+      groups.Yesterday.push(item)
+    } else {
+      groups.Earlier.push(item)
+    }
+  }
+
+  return [
+    { label: 'Today', items: groups.Today },
+    { label: 'Yesterday', items: groups.Yesterday },
+    { label: 'Earlier', items: groups.Earlier },
+  ].filter(g => g.items.length > 0)
+}
+
+const groupedNotifications = computed(() => groupByDate(notificationStore.notifications))
+
+function formatRelativeTime(dateStr) {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const now = new Date()
+  const date = new Date(dateStr)
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function isActive(path) {
+  return route.path === path || route.path.startsWith(path + '/')
 }
 
 async function toggleNotifications() {
