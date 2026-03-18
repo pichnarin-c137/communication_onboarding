@@ -11,4 +11,7 @@ export default defineConfig({
       '@core': fileURLToPath(new URL('./src/core', import.meta.url)),
     },
   },
+  server: {
+    allowedHosts: ['coms.ecoapsara.com'],
+  },
 })

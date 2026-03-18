@@ -9,12 +9,6 @@ export function setAccessToken(token: string | null): void {
   _accessToken = token
 }
 
-const cfHeaders: Record<string, string> = {}
-if (import.meta.env.VITE_CF_ACCESS_CLIENT_ID) {
-  cfHeaders['CF-Access-Client-Id'] = import.meta.env.VITE_CF_ACCESS_CLIENT_ID
-  cfHeaders['CF-Access-Client-Secret'] = import.meta.env.VITE_CF_ACCESS_CLIENT_SECRET
-}
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15000,
@@ -22,7 +16,6 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    ...cfHeaders,
   },
 })
 
