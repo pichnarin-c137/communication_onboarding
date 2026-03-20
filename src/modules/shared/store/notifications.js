@@ -1,11 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { notificationService } from '@/modules/shared/services/notificationService.js'
+import { usePusher } from '@/modules/shared/composables/usePusher'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useToast } from '@/modules/shared/composables/useToast'
 
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = ref([])
   const unreadCount = ref(0)
   const loading = ref(false)
+
+  // Composables called at factory level — this is the correct Pinia pattern.
+  // Never call composables inside actions; they require setup/factory context.
+  const authStore = useAuthStore()
+  const { connect, disconnect } = usePusher()
+  const { info } = useToast()
+
+  let activeChannel = null
 
   async function fetchNotifications(limit = 20) {
     loading.value = true
@@ -56,6 +67,31 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
+  function connectRealtime() {
+    if (activeChannel) return
+    const userId = authStore.userId
+    if (!userId) return
+
+    const pusher = connect(() => authStore.accessToken)
+    activeChannel = pusher.subscribe(`private-notifications.${userId}`)
+
+    activeChannel.bind('NotificationCreated', (data) => {
+      notifications.value.unshift(data)
+      if (notifications.value.length > 100) notifications.value.length = 100
+      unreadCount.value++
+      if (data.title) info(data.title)
+    })
+  }
+
+  function disconnectRealtime() {
+    if (activeChannel) {
+      activeChannel.unbind('NotificationCreated')
+      activeChannel.unsubscribe()
+      activeChannel = null
+    }
+    disconnect()
+  }
+
   return {
     notifications,
     unreadCount,
@@ -63,6 +99,8 @@ export const useNotificationStore = defineStore('notifications', () => {
     fetchNotifications,
     fetchUnreadCount,
     markAsRead,
-    markAllAsRead
+    markAllAsRead,
+    connectRealtime,
+    disconnectRealtime,
   }
 })

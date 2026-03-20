@@ -38,13 +38,17 @@
             <dt class="text-xs text-gray-500">Status</dt>
             <dd><StatusBadge v-if="group.bot_status" :status="group.bot_status" /></dd>
           </div>
-          <div v-if="group.connected_at">
+          <div v-if="group.connected_at && group.bot_status === 'connected'">
             <dt class="text-xs text-gray-500">Connected At</dt>
             <dd class="font-medium text-gray-900">{{ formatDateTimeFromISO(group.connected_at) }}</dd>
           </div>
-          <div v-if="group.disconnected_at">
+          <div v-if="group.disconnected_at && group.bot_status === 'removed'">
             <dt class="text-xs text-gray-500">Disconnected At</dt>
             <dd class="font-medium text-gray-900">{{ formatDateTimeFromISO(group.disconnected_at) }}</dd>
+          </div>
+          <div v-if="group.reconnected_at && group.bot_status === 'reconnected'">
+            <dt class="text-xs text-gray-500">Reconnected At</dt>
+            <dd class="font-medium text-gray-900">{{ formatDateTimeFromISO(group.reconnected_at) }}</dd>
           </div>
         </dl>
       </div>
@@ -82,12 +86,20 @@
           {{ sendingTest ? 'Sending...' : 'Send Test Message' }}
         </button>
         <button
+          v-if="group.bot_status === 'connected' || group.bot_status === 'reconnected'"
           @click="showDisconnectModal = true"
-          :disabled="group.bot_status === 'removed'"
-          :title="group.bot_status === 'removed' ? 'Group is already disconnected' : ''"
+          :disabled="disconnecting"
           class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Disconnect Group
+          {{ disconnecting ? 'Disconnecting...' : 'Disconnect Group' }}
+        </button>
+        <button
+          v-if="group.bot_status === 'removed'"
+          @click="showReconnectModal = true"
+          :disabled="disconnecting"
+          class="px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {{ disconnecting ? 'Reconnecting...' : 'Reconnect Group' }}
         </button>
       </div>
 
@@ -234,6 +246,18 @@
       @confirm="handleDisconnect"
       @cancel="showDisconnectModal = false"
     />
+
+    <!-- Reconnect Confirm Modal -->
+    <ConfirmModal
+      :open="showReconnectModal"
+      title="Reconnect Group"
+      message="Are you sure you want to reconnect this Telegram group? The bot will resume sending notifications to this group."
+      confirm-text="Reconnect"
+      type="success"
+      @confirm="handleReconnect"
+      @cancel="showReconnectModal = false"
+    />
+
   </div>
 </template>
 
@@ -270,6 +294,7 @@ const languageOptions = [
 // Actions
 const sendingTest = ref(false)
 const showDisconnectModal = ref(false)
+const showReconnectModal = ref(false)
 const disconnecting = ref(false)
 
 // Message history
@@ -366,6 +391,20 @@ async function handleDisconnect() {
     await telegramService.disconnectGroup(route.params.id)
     success('Group disconnected.')
     showDisconnectModal.value = false
+    await loadGroup()
+  } catch (err) {
+    toastError(extractErrorMessage(err))
+  } finally {
+    disconnecting.value = false
+  }
+}
+
+async function handleReconnect() {
+  disconnecting.value = true
+  try {
+    await telegramService.reconnectGroup(route.params.id)
+    success('Group reconnected.')
+    showReconnectModal.value = false
     await loadGroup()
   } catch (err) {
     toastError(extractErrorMessage(err))

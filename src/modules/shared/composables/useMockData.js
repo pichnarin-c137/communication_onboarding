@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 
-// ─── Status Config ───
+//  Status Config 
 export const statusConfig = {
   pending: {
     label: 'Pending Assignment',
@@ -45,7 +45,7 @@ export const availabilityConfig = {
   overloaded: { label: 'Overloaded', bgColor: 'bg-red-100', textColor: 'text-red-800', dotColor: 'bg-red-500' }
 }
 
-// ─── Mock Users ───
+//  Mock Users 
 export const mockSalesUser = {
   id: 1,
   name: 'John Sales',
@@ -335,7 +335,7 @@ export const mockSessions = [
   }
 ]
 
-// ─── Mock Calendar Events (Demos) ───
+//  Mock Calendar Events (Demos) 
 export const mockCalendarEvents = [
   {
     id: 1001,
@@ -350,7 +350,7 @@ export const mockCalendarEvents = [
     trainerName: 'Sokha Chea',
     status: 'scheduled'
   },
-    {
+  {
     id: 1002,
     title: 'Product Demo — ABC Corporation',
     date: new Date().toISOString().split('T')[0],
@@ -404,7 +404,7 @@ export const mockCalendarEvents = [
   }
 ]
 
-// ─── Products ───
+//  Products 
 export const products = [
   'HR Management Suite',
   'Attendance System',
@@ -426,7 +426,7 @@ export const sessionTopics = [
   'Custom Topic'
 ]
 
-// ─── Composable ───
+//  Composable 
 export function useMockData() {
   const loading = ref(false)
   const onboardings = ref([...mockOnboardings])

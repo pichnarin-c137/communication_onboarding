@@ -17,6 +17,10 @@ export const telegramService = {
     const res = await api.patch(`/telegram/groups/${id}/disconnect`)
     return res.data
   },
+  async reconnectGroup(id) {
+    const res = await api.patch(`/telegram/groups/${id}/reconnect`)
+    return res.data
+  },
   async updateLanguage(id, language) {
     const res = await api.patch(`/telegram/groups/${id}/language`, { language })
     return res.data
