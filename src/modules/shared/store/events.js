@@ -26,7 +26,7 @@ export function appointmentToEvent(appt) {
   return {
     id:              `appt-${appt.id}`,
     appointmentId:   appt.id,
-    title:           appt.title || 'Appointment',
+    title:           appt.title || null,
     start,
     end,
     type:            appt.appointment_type,

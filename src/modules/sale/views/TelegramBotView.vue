@@ -102,7 +102,7 @@
       <div class="text-left max-w-xs mx-auto space-y-2 mb-6">
         <div class="flex items-start gap-2 text-sm text-gray-600">
           <span class="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">1</span>
-          Add @CheckinMeBot to your Telegram group
+          Add @COMSTetrisBot to your Telegram group
         </div>
         <div class="flex items-start gap-2 text-sm text-gray-600">
           <span class="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">2</span>
@@ -110,7 +110,7 @@
         </div>
         <div class="flex items-start gap-2 text-sm text-gray-600">
           <span class="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-medium">3</span>
-          Run <code class="bg-gray-100 px-1 rounded text-xs">/setup &lt;token&gt;</code> in the group
+          Run <code class="bg-gray-100 px-1 mt-1 rounded text-xs">/setup &lt;token&gt;</code> in the group
         </div>
       </div>
       <button

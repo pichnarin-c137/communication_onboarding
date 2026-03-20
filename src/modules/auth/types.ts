@@ -1,4 +1,4 @@
-// ─── Request Payloads ─────────────────────────────────────────────────────────
+//  Request Payloads
 
 export interface LoginCredentials {
   identifier: string
@@ -14,7 +14,7 @@ export interface RefreshTokenData {}
 
 export interface LogoutData {}
 
-// ─── User Profile ─────────────────────────────────────────────────────────────
+//  User Profile
 
 export interface UserProfile {
   id: string
@@ -33,7 +33,7 @@ export interface UserProfile {
   created_at?: string
 }
 
-// ─── API Response Wrappers ────────────────────────────────────────────────────
+//  API Response Wrappers
 
 export interface LoginResponse {
   success: boolean
@@ -70,7 +70,7 @@ export interface ProfileResponse {
   data: UserProfile
 }
 
-// ─── Error Messages ───────────────────────────────────────────────────────────
+//  Error Messages 
 
 export enum AuthErrorMessages {
   INVALID_CREDENTIALS = 'Invalid credentials. Please check your email and password.',

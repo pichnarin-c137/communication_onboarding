@@ -4,7 +4,7 @@
     <template v-if="currentLayout === 'none'">
       <router-view v-slot="{ Component }">
         <Transition name="fade" mode="out-in">
-          <component :is="Component" :key="route.fullPath" />
+          <component v-if="Component" :is="Component" :key="route.fullPath" />
         </Transition>
       </router-view>
     </template>
@@ -36,7 +36,7 @@
         <div class="w-full">
           <router-view v-slot="{ Component }">
             <Transition name="fade" mode="out-in">
-              <component :is="Component" :key="route.fullPath" />
+              <component v-if="Component" :is="Component" :key="route.fullPath" />
             </Transition>
           </router-view>
         </div>
@@ -71,7 +71,7 @@
         <div class="w-full">
           <router-view v-slot="{ Component }">
             <Transition name="fade" mode="out-in">
-              <component :is="Component" :key="route.fullPath" />
+              <component v-if="Component" :is="Component" :key="route.fullPath" />
             </Transition>
           </router-view>
         </div>
@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   HomeIcon,
@@ -104,9 +104,23 @@ import NavBar from '@/modules/shared/components/NavBar.vue'
 import MobileNav from '@/modules/shared/components/MobileNav.vue'
 import ToastContainer from '@/modules/shared/components/ToastContainer.vue'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useNotificationStore } from '@/modules/shared/store/notifications'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
+
+watch(
+  () => authStore.isAuthenticated,
+  (authenticated) => {
+    if (authenticated) {
+      notificationStore.connectRealtime()
+    } else {
+      notificationStore.disconnectRealtime()
+    }
+  },
+  { immediate: true }
+)
 
 const sidebarOpen = ref(false)
 const sidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true')

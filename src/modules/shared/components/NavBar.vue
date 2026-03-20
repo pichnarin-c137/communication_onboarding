@@ -268,7 +268,7 @@ const userDisplayName = computed(() => {
   return u.full_name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || ''
 })
 
-// ── Notification type map ──────────────────────────────────────────────────
+//  Notification type map
 const notificationTypeMap = {
   appointment_assigned:         { icon: BriefcaseIcon,    bgClass: 'bg-blue-100',    iconClass: 'text-blue-600' },
   appointment_leave_office:     { icon: MapPinIcon,        bgClass: 'bg-amber-100',   iconClass: 'text-amber-600' },
@@ -294,7 +294,7 @@ function notificationMeta(type) {
   return notificationTypeMap[type] || { icon: BellIcon, bgClass: 'bg-gray-100', iconClass: 'text-gray-500' }
 }
 
-// ── Date grouping ──────────────────────────────────────────────────────────
+//  Date grouping 
 function groupByDate(items) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)

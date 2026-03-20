@@ -17,7 +17,7 @@
       collapsed ? 'w-64 lg:w-16 lg:translate-x-0' : 'w-64 lg:translate-x-0',
     ]"
   >
-    <!-- ── Logo header ── -->
+    <!--  Logo header  -->
     <div
       :class="[
         'h-16 flex items-center px-3 border-b border-gray-100 flex-shrink-0',
@@ -43,7 +43,7 @@
       </button>
     </div>
 
-    <!-- ── Scrollable body: nav items ── -->
+    <!--  Scrollable body: nav items  -->
     <div class="flex-1 overflow-y-auto custom-scrollbar min-h-0">
       <div class="p-2">
         <nav class="space-y-5">
@@ -125,7 +125,7 @@
       </div>
     </div>
 
-    <!-- ── Bottom section ── -->
+    <!--  Bottom section  -->
     <div class="flex-shrink-0 border-t border-gray-100">
       <!-- Collapse toggle (desktop only) -->
       <div class="hidden lg:block p-2 border-t border-gray-100">

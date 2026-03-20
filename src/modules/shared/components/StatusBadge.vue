@@ -51,6 +51,7 @@ const statusMap = {
   // Telegram group statuses
   connected:   { label: 'Connected',   bg: '#DCFCE7', text: '#15803D', dot: '#22C55E' },
   removed:     { label: 'Removed',     bg: '#FEE2E2', text: '#DC2626', dot: '#F87171' },
+  reconnected: { label: 'Reconnected', bg: '#D1FAE5', text: '#065F46', dot: '#10B981' },
   // Telegram message statuses
   sent:        { label: 'Sent',        bg: '#DCFCE7', text: '#15803D', dot: '#22C55E' },
   failed:      { label: 'Failed',      bg: '#FEE2E2', text: '#DC2626', dot: '#F87171' },

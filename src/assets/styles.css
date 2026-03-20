@@ -142,7 +142,7 @@
   min-width: 44px;
 }
 
-/* ─── FullCalendar Overrides ─── */
+/*  FullCalendar Overrides  */
 :root {
   --fc-border-color: #E5E7EB;
   --fc-button-bg-color: #FFFFFF;
@@ -283,7 +283,7 @@
   font-weight: 600;
 }
 
-/* ─── Month View: Badge Indicators ─── */
+/*  Month View: Badge Indicators  */
 .fc-dayGridMonth-view .fc-more-link {
   display: flex;
   justify-content: center;

@@ -26,7 +26,7 @@
                   </span>
                   <StatusBadge :status="appt.status" />
                 </div>
-                <h3 class="text-base font-bold text-gray-900 leading-snug">{{ appt.title }}</h3>
+                <h3 v-if="appt.title" class="text-base font-bold text-gray-900 leading-snug">{{ appt.title }}</h3>
               </div>
               <button @click="close" class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <XMarkIcon class="w-5 h-5" />
@@ -56,7 +56,7 @@
               <DetailRow v-if="appt.notes" :icon="ClipboardDocumentIcon">{{ appt.notes }}</DetailRow>
             </div>
 
-            <!-- ===================== TRAINER ACTIONS ===================== -->
+            <!--  TRAINER ACTIONS  -->
             <template v-if="authStore.isTrainer">
 
               <!-- VIEW MODE — show action buttons -->
@@ -216,7 +216,7 @@
 
             </template>
 
-            <!-- ===================== SALE TRACKING + ACTIONS ===================== -->
+            <!--  SALE TRACKING + ACTIONS  -->
             <template v-else>
               <div class="px-5 pb-5 space-y-4">
                 <!-- Status timeline -->
@@ -260,7 +260,7 @@
               </div>
             </template>
 
-            <!-- ===================== SHARED ACTION PANELS (sale + trainer) ===================== -->
+            <!--  SHARED ACTION PANELS (sale + trainer)  -->
 
             <!-- ---- CANCEL sub-panel ---- -->
             <ActionPanel v-if="mode === 'cancel'" title="Cancel Appointment" @back="mode = 'view'">
@@ -392,7 +392,7 @@ import { useToast } from '@/modules/shared/composables/useToast.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 
-// ─── Inline sub-components (render functions — no runtime template compilation) ───
+// Inline sub-components (render functions — no runtime template compilation)
 
 const DetailRow = (props, { slots }) =>
   h('div', { class: 'flex items-start gap-3 text-sm' }, [
@@ -424,19 +424,36 @@ const TimelineStep = (props) =>
   ])
 TimelineStep.props = ['label', 'timestamp', 'done', 'active']
 
-// ─── GPS capture ──────────────────────────────────────────────────────────────
+// GPS capture
 const GpsCapture = {
   props: { lat: Number, lng: Number },
   emits: ['update:lat', 'update:lng'],
   setup(props, { emit }) {
     const getting = ref(false)
     const err = ref(null)
+    function onSuccess(p) {
+      emit('update:lat', p.coords.latitude)
+      emit('update:lng', p.coords.longitude)
+      getting.value = false
+      err.value = null
+    }
+    function onFinalError() {
+      getting.value = false
+      err.value = 'Auto-detect failed. Please enter coordinates manually.'
+    }
     function get() {
       if (!navigator.geolocation) { err.value = 'Geolocation not supported'; return }
       getting.value = true; err.value = null
       navigator.geolocation.getCurrentPosition(
-        (p) => { emit('update:lat', p.coords.latitude); emit('update:lng', p.coords.longitude); getting.value = false },
-        (e) => { err.value = e.message; getting.value = false }
+        onSuccess,
+        () => {
+          navigator.geolocation.getCurrentPosition(
+            onSuccess,
+            onFinalError,
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+          )
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       )
     }
     return () => h('div', [
@@ -452,13 +469,13 @@ const GpsCapture = {
         h('input', { value: props.lng, onInput: (e) => emit('update:lng', +e.target.value), type: 'number', step: 'any', placeholder: 'Longitude', class: 'px-2.5 py-2 border border-gray-300 rounded-lg text-xs' })
       ]),
       err.value
-        ? h('p', { class: 'text-xs text-red-500 mt-1' }, err.value)
+        ? h('p', { class: 'text-xs text-amber-600 mt-1' }, err.value)
         : (props.lat && props.lng ? h('p', { class: 'text-xs text-emerald-600 mt-1' }, '📍 Location captured') : null)
     ])
   }
 }
 
-// ─── Proof photo upload ───────────────────────────────────────────────────────
+// Proof photo upload
 const ProofUpload = {
   props: { label: String, mediaId: String, service: Object },
   emits: ['update:mediaId'],
@@ -497,7 +514,7 @@ const ProofUpload = {
   }
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// Main component
 const router = useRouter()
 const authStore = useAuthStore()
 const eventStore = useEventStore()
@@ -526,14 +543,14 @@ const editForm = reactive({
 
 const newStudents = ref([{ name: '', phone_number: '', profession: '' }])
 
-// ─── Status bar colour ───────────────────────────────────────────────────────
+// Status bar colour
 const STATUS_COLORS = {
   pending: '#3B82F6', leave_office: '#F59E0B', in_progress: '#10B981',
   done: '#8B5CF6', cancelled: '#EF4444', rescheduled: '#6B7280'
 }
 const statusBarColor = computed(() => STATUS_COLORS[appt.value?.status] || '#E5E7EB')
 
-// ─── Computed permission guards ──────────────────────────────────────────────
+// Computed permission guards
 const canLeaveOffice = computed(() =>
   appt.value?.status === 'pending' && ['physical', 'hybrid'].includes(appt.value?.location_type)
 )
@@ -550,7 +567,7 @@ const canCancel     = computed(() => {
   return true
 })
 
-// ─── Status timeline for sale ────────────────────────────────────────────────
+// Status timeline for sale
 const TIMELINE = [
   { status: 'pending',      label: 'Appointment Scheduled' },
   { status: 'leave_office', label: 'Trainer Left Office' },
@@ -581,7 +598,7 @@ const statusTimeline = computed(() => {
   })
 })
 
-// ─── Fetch appointment when modal opens ──────────────────────────────────────
+// Fetch appointment when modal opens
 watch(() => eventStore.isDetailsModalOpen, async (open) => {
   if (!open) { appt.value = null; return }
   const event = eventStore.selectedEvent
@@ -650,7 +667,7 @@ function initEdit() {
   mode.value = 'edit'
 }
 
-// ─── Actions ─────────────────────────────────────────────────────────────────
+// Actions
 async function doLeaveOffice() {
   actionLoading.value = true; actionError.value = null
   try {
@@ -768,7 +785,7 @@ async function doAddStudents() {
   } finally { actionLoading.value = false }
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Helpers
 async function reloadAppt() {
   const service = authStore.isTrainer ? trainerService : saleService
   const res = await service.getAppointment(appt.value.id)

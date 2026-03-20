@@ -108,7 +108,6 @@ const calendarOptions = computed(() => ({
             <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:${typeBg};color:${typeColor};letter-spacing:.4px;flex-shrink:0">${typeLabel}</span>
             ${startFmt ? `<span style="font-size:9px;color:#6B7280;flex-shrink:0">${startFmt}${endFmt ? ' – ' + endFmt : ''}</span>` : ''}
           </div>
-          <div style="font-size:11px;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3">${event.title}</div>
           ${client ? `<div style="font-size:10px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${client}</div>` : ''}
         </div>`
       }
