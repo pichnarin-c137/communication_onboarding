@@ -90,6 +90,11 @@ export const trainerService = {
 
   // Media upload (unchanged)
 
+  async checkin(latitude, longitude) {
+    const response = await api.post('/trainer/checkin', { latitude, longitude })
+    return response.data
+  },
+
   async uploadProofPhoto(file) {
     const formData = new FormData()
     formData.append('file', file)

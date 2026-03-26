@@ -22,6 +22,9 @@ const router = createRouter({
   }
 })
 
-setupRouteGuards(router)
+// Guards are set up after Pinia is installed — see main.js
+export function installGuards() {
+  setupRouteGuards(router)
+}
 
 export default router
