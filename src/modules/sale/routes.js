@@ -6,6 +6,18 @@ export default [
     meta: { layout: 'sales', title: 'Dashboard', role: 'sale' }
   },
   {
+    path: '/sales/trainers',
+    name: 'SalesTrainerList',
+    component: () => import('@/modules/sale/views/TrainerListView.vue'),
+    meta: { layout: 'sales', title: 'Trainer Activity', role: 'sale' }
+  },
+  {
+    path: '/sales/trainers/:id',
+    name: 'SalesTrainerDetail',
+    component: () => import('@/modules/sale/views/TrainerDetailView.vue'),
+    meta: { layout: 'sales', title: 'Trainer Detail', role: 'sale' }
+  },
+  {
     path: '/sales/appointments',
     name: 'AppointmentList',
     component: () => import('@/modules/sale/views/AppointmentListView.vue'),

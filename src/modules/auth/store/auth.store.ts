@@ -42,6 +42,8 @@ export const useAuthStore = defineStore('auth', () => {
       setAccessToken(response.data.access_token)
       user.value = response.data.user
       pendingIdentifier.value = null
+
+      silentGpsCheckin()
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : String(err)
       throw err
@@ -58,9 +60,41 @@ export const useAuthStore = defineStore('auth', () => {
       accessToken.value = response.data.access_token
       setAccessToken(response.data.access_token)
       await fetchProfile()
+
+      silentGpsCheckin()
     } catch {
       // Swallow — user is simply not authenticated
     }
+  }
+
+  /**
+   * Fire-and-forget GPS check-in for trainers.
+   * Seeds their position in Redis so sales can see them on the map.
+   */
+  function silentGpsCheckin(): void {
+    if (user.value?.role !== 'trainer') return
+    if (!navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        // @ts-ignore — trainerService is a plain JS module
+        import('@/modules/trainer/services/trainerService').then(({ trainerService }: any) => {
+          trainerService.checkin(pos.coords.latitude, pos.coords.longitude).catch(() => {
+            // Silent — GPS check-in is best-effort
+          })
+        })
+      },
+      (err) => {
+        if (import.meta.env.DEV) {
+          console.debug(
+            '[GPS Check-in] Unavailable — this is normal on desktop.',
+            'Trainers on mobile devices will use hardware GPS.',
+            `Reason: ${err.message}`
+          )
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
   }
 
   async function logout(): Promise<void> {

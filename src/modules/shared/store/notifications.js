@@ -10,9 +10,7 @@ export const useNotificationStore = defineStore('notifications', () => {
   const unreadCount = ref(0)
   const loading = ref(false)
 
-  // Composables called at factory level — this is the correct Pinia pattern.
-  // Never call composables inside actions; they require setup/factory context.
-  const authStore = useAuthStore()
+  // Composables that don't depend on other stores are safe at factory level
   const { connect, disconnect } = usePusher()
   const { info } = useToast()
 
@@ -69,11 +67,11 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   function connectRealtime() {
     if (activeChannel) return
-    const userId = authStore.userId
-    if (!userId) return
+    const authStore = useAuthStore()
+    if (!authStore.userId) return
 
     const pusher = connect(() => authStore.accessToken)
-    activeChannel = pusher.subscribe(`private-notifications.${userId}`)
+    activeChannel = pusher.subscribe(`private-notifications.${authStore.userId}`)
 
     activeChannel.bind('NotificationCreated', (data) => {
       notifications.value.unshift(data)
@@ -85,8 +83,12 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   function disconnectRealtime() {
     if (activeChannel) {
-      activeChannel.unbind('NotificationCreated')
-      activeChannel.unsubscribe()
+      try {
+        activeChannel.unbind('NotificationCreated')
+        activeChannel.unsubscribe()
+      } catch {
+        // WebSocket may already be closing — safe to ignore
+      }
       activeChannel = null
     }
     disconnect()

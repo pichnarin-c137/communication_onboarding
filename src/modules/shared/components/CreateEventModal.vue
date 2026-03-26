@@ -1,16 +1,17 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="eventStore.isCreateModalOpen"
+      <div v-if="eventStore.isCreateModalOpen"
         class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop"
-        @click.self="close"
-      >
-        <div class="bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-2xl">
+        @click.self="close">
+        <div
+          class="bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-2xl">
           <!-- Header -->
-          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+          <div
+            class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
             <h3 class="text-base font-semibold text-gray-900">New Appointment</h3>
-            <button @click="close" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button @click="close"
+              class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <XMarkIcon class="w-5 h-5" />
             </button>
           </div>
@@ -21,7 +22,8 @@
               <label class="block text-xs font-medium text-gray-700 mb-1.5">
                 {{ form.appointment_type === 'demo' ? 'Title *' : 'Title (optional)' }}
               </label>
-              <input v-model="form.title" type="text" :required="form.appointment_type === 'demo'" placeholder="e.g. Initial Training Session"
+              <input v-model="form.title" type="text" :required="form.appointment_type === 'demo'"
+                placeholder="e.g. Initial Training Session"
                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
             </div>
 
@@ -107,7 +109,8 @@
             </div>
 
             <!-- Error -->
-            <div v-if="error" class="px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ error }}</div>
+            <div v-if="error" class="px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{
+              error }}</div>
 
             <!-- Submit -->
             <div class="flex gap-3 pt-1">
@@ -140,10 +143,10 @@ const authStore = useAuthStore()
 const eventStore = useEventStore()
 const toast = useToast()
 
-const clients  = ref([])
+const clients = ref([])
 const trainers = ref([])
 const submitting = ref(false)
-const error    = ref(null)
+const error = ref(null)
 
 const form = reactive({
   title: '',
@@ -159,6 +162,10 @@ const form = reactive({
   notes: ''
 })
 
+function getClientById(clientId) {
+  return clients.value.find(client => String(client.id) === String(clientId))
+}
+
 function computeDefaultTimes() {
   const d = new Date()
   d.setSeconds(0, 0)
@@ -172,7 +179,7 @@ function computeDefaultTimes() {
   const pad = n => String(n).padStart(2, '0')
   return {
     startTime: `${pad(start.getHours())}:${pad(start.getMinutes())}`,
-    endTime:   `${pad(end.getHours())}:${pad(end.getMinutes())}`
+    endTime: `${pad(end.getHours())}:${pad(end.getMinutes())}`
   }
 }
 
@@ -188,15 +195,23 @@ function resetForm() {
     location_type: 'physical',
     client_id: '',
     trainer_id: '',
-    scheduled_date:       defaults.date || today,
+    scheduled_date: defaults.date || today,
     scheduled_start_time: times.startTime,
-    scheduled_end_time:   times.endTime,
+    scheduled_end_time: times.endTime,
     meeting_link: '',
     physical_location: '',
     notes: ''
   })
   error.value = null
 }
+
+watch(() => form.client_id, (clientId) => {
+  if (!clientId) return
+  const selectedClient = getClientById(clientId)
+  if (selectedClient?.link_address) {
+    form.physical_location = selectedClient.link_address
+  }
+})
 
 // Load dropdowns when modal opens
 watch(() => eventStore.isCreateModalOpen, async (open) => {
@@ -226,11 +241,11 @@ async function submit() {
       scheduled_start_time: form.scheduled_start_time,
       scheduled_end_time: form.scheduled_end_time
     }
-    if (form.title)              payload.title              = form.title
-    if (form.trainer_id)         payload.trainer_id         = form.trainer_id
-    if (form.meeting_link)       payload.meeting_link       = form.meeting_link
-    if (form.physical_location)  payload.physical_location  = form.physical_location
-    if (form.notes)              payload.notes              = form.notes
+    if (form.title) payload.title = form.title
+    if (form.trainer_id) payload.trainer_id = form.trainer_id
+    if (form.meeting_link) payload.meeting_link = form.meeting_link
+    if (form.physical_location) payload.physical_location = form.physical_location
+    if (form.notes) payload.notes = form.notes
 
     // Both services use getAppointments but only saleService has createAppointment
     // Use saleService for creation regardless (same endpoint POST /appointments)

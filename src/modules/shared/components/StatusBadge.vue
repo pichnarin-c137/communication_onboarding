@@ -31,6 +31,11 @@ const statusMap = {
   // Appointment statuses
   leave_office: { label: 'Leave Office', bg: '#FEF3C7', text: '#B45309', dot: '#F59E0B' },
   done:        { label: 'Done',        bg: '#EDE9FE', text: '#6D28D9', dot: '#8B5CF6' },
+  // Trainer tracking statuses
+  at_office:   { label: 'At Office',   bg: '#F3F4F6', text: '#374151', dot: '#9CA3AF' },
+  en_route:    { label: 'En Route',    bg: '#DBEAFE', text: '#1D4ED8', dot: '#3B82F6' },
+  arrived:     { label: 'Arrived',     bg: '#FEF3C7', text: '#B45309', dot: '#F59E0B' },
+  in_session:  { label: 'In Session',  bg: '#D1FAE5', text: '#065F46', dot: '#10B981' },
   // Session statuses
   scheduled:   { label: 'Scheduled',   bg: '#DBEAFE', text: '#1D4ED8', dot: '#60A5FA' },
   rescheduled: { label: 'Rescheduled', bg: '#FEF9C3', text: '#A16207', dot: '#EAB308' },

@@ -294,7 +294,7 @@ function notificationMeta(type) {
   return notificationTypeMap[type] || { icon: BellIcon, bgClass: 'bg-gray-100', iconClass: 'text-gray-500' }
 }
 
-//  Date grouping 
+//  Date grouping
 function groupByDate(items) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)

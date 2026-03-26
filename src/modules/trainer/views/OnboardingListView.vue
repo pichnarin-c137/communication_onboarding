@@ -1,15 +1,9 @@
 <template>
-  <div class="space-y-6 mt-3">
+  <div class="space-y-5">
     <br>
-    <!-- Header -->
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">Onboarding</h1>
-      <p class="text-sm text-gray-500 mt-0.5">Manage onboarding progress for your clients</p>
-    </div>
-
     <!-- Filters -->
     <div class="flex gap-3">
-      <select v-model="statusFilter" @change="load()" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
+      <select v-model="statusFilter" v-if="onboardings.length > 0" @change="load()" class="px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
         <option value="">All Statuses</option>
         <option value="in_progress">In Progress</option>
         <option value="completed">Completed</option>

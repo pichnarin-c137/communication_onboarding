@@ -95,6 +95,7 @@ import {
   AcademicCapIcon,
   Cog6ToothIcon,
   ChartBarIcon,
+  MapIcon
 } from '@heroicons/vue/24/outline'
 import {
   Circle
@@ -139,6 +140,8 @@ const salesNavGroups = [
     label: 'Main',
     items: [
       { to: '/sales', label: 'Dashboard', icon: HomeIcon },
+      { to: '/sales/trainers', label: 'Trainers', icon: MapIcon },
+      { to: '/sales/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
       { to: '/sales/calendar', label: 'Calendar', icon: CalendarDaysIcon },
       {
         label: 'Reports',
