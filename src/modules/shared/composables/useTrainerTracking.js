@@ -78,6 +78,8 @@ export function useTrainerTracking() {
       startGps()
       if (pingInterval) clearInterval(pingInterval)
       pingInterval = setInterval(_sendPing, PING_INTERVAL_MS)
+      // Send an immediate ping on resume (same as startTracking does)
+      setTimeout(_sendPing, INITIAL_PING_DELAY_MS)
     }
   }
 
@@ -86,6 +88,7 @@ export function useTrainerTracking() {
       clearInterval(pingInterval)
       pingInterval = null
     }
+    stopGps()
   })
 
   return { isTracking, trackingState, gpsError, startTracking, stopTracking, resumeIfActive }

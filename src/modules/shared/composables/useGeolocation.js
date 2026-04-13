@@ -20,12 +20,15 @@ export function getCurrentLocation() {
         if (err.code === 1) {
           reject(new Error('Location access is required to start a session. Please enable it in your browser settings.'))
         } else if (err.code === 3) {
-          reject(new Error('Location request timed out. Please try again.'))
+          reject(new Error('Location request timed out. Please check your location settings and try again.'))
         } else {
           reject(new Error('Unable to retrieve your location. Please try again.'))
         }
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      // enableHighAccuracy: true  → uses device GPS chip, avoids Google's network location API (no 429s)
+      // maximumAge: 30000         → return a cached GPS fix if one exists within the last 30s (instant)
+      // timeout: 30000            → give the GPS chip up to 30s to acquire a fresh fix
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 30000 }
     )
   })
 }
@@ -63,7 +66,7 @@ export function useLocationWatch() {
         else if (err.code === 3) error.value = 'Location request timed out.'
         else error.value = 'Unable to retrieve your location.'
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     )
   }
 

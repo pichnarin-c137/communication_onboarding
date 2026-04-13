@@ -66,6 +66,12 @@ export default [
     meta: { layout: 'sales', title: 'Telegram Group', role: 'sale' }
   },
   {
+    path: '/sales/configurations/business-types',
+    name: 'SalesBusinessTypes',
+    component: () => import('@/modules/sale/views/BusinessTypeView.vue'),
+    meta: { layout: 'sales', title: 'Business Types', role: 'sale' }
+  },
+  {
     path: '/sales/configurations/notifications',
     name: 'SalesNotifications',
     component: () => import('@/modules/sale/views/NotificationView.vue'),
@@ -82,5 +88,11 @@ export default [
     name: 'SalesProfile',
     component: () => import('@/modules/auth/views/ProfileView.vue'),
     meta: { layout: 'sales', title: 'Profile Settings', role: 'sale' }
+  },
+  {
+    path: '/sales/settings',
+    name: 'SalesSettings',
+    component: () => import('@/modules/shared/views/SettingsView.vue'),
+    meta: { layout: 'sales', title: 'Settings', role: 'sale' }
   }
 ]

@@ -130,7 +130,7 @@
           class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           @click.self="closeSetupModal"
         >
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <div class="bg-white rounded-lg shadow-md w-full max-w-md p-6 space-y-4">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-gray-900">Generate Setup Token</h3>
               <button @click="closeSetupModal" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -353,7 +353,18 @@ async function handleGenerateToken() {
 
 async function copyToken(text) {
   try {
-    await navigator.clipboard.writeText(text)
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      // Fallback for non-secure contexts (http://0.0.0.0, http://192.168.x.x, etc.)
+      const el = document.createElement('textarea')
+      el.value = text
+      el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0'
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
     success('Copied to clipboard')
   } catch {
     toastError('Failed to copy')

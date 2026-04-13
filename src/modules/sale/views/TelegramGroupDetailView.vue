@@ -210,14 +210,14 @@
               <button
                 @click="loadMessages(msgPage - 1)"
                 :disabled="msgPage <= 1"
-                class="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                class="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 Previous
               </button>
               <button
                 @click="loadMessages(msgPage + 1)"
                 :disabled="msgPage >= (msgMeta.last_page ?? 1)"
-                class="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                class="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
                 Next
               </button>

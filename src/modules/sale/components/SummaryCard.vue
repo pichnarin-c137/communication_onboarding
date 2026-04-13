@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow duration-200">
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
     <div class="flex items-start justify-between">
       <div>
         <p class="text-sm font-medium text-gray-500">{{ title }}</p>
@@ -58,6 +58,6 @@ const iconColor = computed(() => {
 const subtitleColor = computed(() => {
   if (props.trend === 'up') return 'text-emerald-600'
   if (props.trend === 'down') return 'text-red-500'
-  return 'text-gray-400'
+  return 'text-gray-500'
 })
 </script>

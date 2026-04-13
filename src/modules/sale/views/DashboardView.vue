@@ -61,7 +61,7 @@
         <SkeletonLoader v-if="loading" type="list" :count="3" />
         <div v-else-if="upcomingAppointments.length === 0" class="py-8 text-center">
           <CalendarDaysIcon class="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p class="text-sm text-gray-400">No upcoming appointments</p>
+          <p class="text-sm text-gray-500">No upcoming appointments</p>
         </div>
         <div v-else class="space-y-3">
           <div
@@ -79,7 +79,7 @@
                 {{ formatDate(appt.scheduled_date) }}
                 · {{ formatTime(appt.scheduled_start_time) }}
               </p>
-              <p class="text-xs text-gray-400 truncate">{{ appt.client?.company_name }}</p>
+              <p class="text-xs text-gray-500 truncate">{{ appt.client?.company_name }}</p>
             </div>
             <StatusBadge :status="appt.status" size="xs" />
           </div>
@@ -97,7 +97,7 @@
         <SkeletonLoader v-if="loading" type="list" :count="3" />
         <div v-else-if="onboardingProgress.length === 0" class="py-8 text-center">
           <ChartBarIcon class="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p class="text-sm text-gray-400">No active onboardings</p>
+          <p class="text-sm text-gray-500">No active onboardings</p>
         </div>
         <div v-else class="space-y-4">
           <div
@@ -120,7 +120,7 @@
                 :style="{ width: `${ob.progress_percentage}%` }"
               ></div>
             </div>
-            <p class="text-xs text-gray-400 mt-1">{{ ob.system?.name }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ ob.system?.name }}</p>
           </div>
         </div>
       </div>

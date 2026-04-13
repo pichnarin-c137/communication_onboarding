@@ -61,7 +61,7 @@
       <p class="text-base font-semibold text-gray-700">
         {{ emptyStateMessage }}
       </p>
-      <p class="text-sm text-gray-400 mt-1">
+      <p class="text-sm text-gray-500 mt-1">
         {{ emptyStateSubMessage }}
       </p>
     </div>
@@ -71,7 +71,7 @@
       <template v-for="group in groupedNotifications" :key="group.label">
         <!-- Date group label -->
         <div class="px-5 py-2.5 bg-gray-50 border-b border-gray-100">
-          <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ group.label }}</span>
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ group.label }}</span>
         </div>
         <!-- Items in this group -->
         <div
@@ -94,11 +94,11 @@
           <!-- Content -->
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-3">
-              <p :class="['text-sm leading-snug', n.is_read ? 'font-normal text-gray-600' : 'font-semibold text-gray-900']">
+              <p :class="['text-sm leading-snug', n.is_read ? 'font-normal text-gray-700' : 'font-semibold text-gray-900']">
                 {{ n.title }}
               </p>
               <div class="flex items-center gap-2 flex-shrink-0">
-                <span class="text-xs text-gray-400 whitespace-nowrap">{{ formatRelativeTime(n.created_at) }}</span>
+                <span class="text-xs text-gray-500 whitespace-nowrap">{{ formatRelativeTime(n.created_at) }}</span>
                 <span v-if="!n.is_read" class="w-2 h-2 rounded-full bg-primary flex-shrink-0"></span>
               </div>
             </div>

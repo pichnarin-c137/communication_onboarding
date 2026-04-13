@@ -12,6 +12,12 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['coms.ecoapsara.com'],
+    host: '0.0.0.0',         // listen on all interfaces inside Docker
+    port: 5173,
+    allowedHosts: ['coms.ecoapsara.com', 'localhost'],
+    hmr: {
+      host: 'localhost',      // HMR WebSocket connects back through host port
+      port: 5173,
+    },
   },
 })

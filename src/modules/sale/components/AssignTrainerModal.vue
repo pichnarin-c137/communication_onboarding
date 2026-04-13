@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40" @click.self="$emit('close')">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+      <div class="bg-white rounded-lg shadow-md max-w-lg w-full">
 
         <!-- Header -->
         <div class="flex items-center justify-between p-5 border-b border-gray-200">

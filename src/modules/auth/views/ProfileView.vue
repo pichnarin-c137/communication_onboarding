@@ -16,7 +16,7 @@
         <!-- Avatar -->
         <div class="flex items-center gap-5 mb-6 pb-6 border-b border-gray-100">
           <div class="relative">
-            <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-4 ring-white shadow-md">
+            <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-gray-200">
               <img v-if="avatarPreview" :src="avatarPreview" class="w-full h-full object-cover" alt="Avatar" />
               <span v-else class="text-2xl font-semibold text-primary">{{ initials }}</span>
             </div>
@@ -80,10 +80,10 @@
                 class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
               />
               <span class="absolute right-3 top-1/2 -translate-y-1/2">
-                <LockClosedIcon class="w-4 h-4 text-gray-400" />
+                <LockClosedIcon class="w-4 h-4 text-gray-500" />
               </span>
             </div>
-            <p class="mt-1 text-xs text-gray-400">Email cannot be changed. Contact support if needed.</p>
+            <p class="mt-1 text-xs text-gray-500">Email cannot be changed. Contact support if needed.</p>
           </div>
 
           <div>
@@ -105,7 +105,7 @@
               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors resize-none"
               placeholder="Tell clients a little about yourself and your expertise..."
             ></textarea>
-            <p class="mt-1 text-xs text-gray-400">Shown to clients when you are assigned as their trainer.</p>
+            <p class="mt-1 text-xs text-gray-500">Shown to clients when you are assigned as their trainer.</p>
           </div>
 
           <div class="flex justify-end pt-2">
@@ -210,7 +210,7 @@
             </div>
             <div>
               <p class="text-sm font-medium text-gray-900">Google</p>
-              <p v-if="googleStatusLoading" class="text-xs text-gray-400">Checking status...</p>
+              <p v-if="googleStatusLoading" class="text-xs text-gray-500">Checking status...</p>
               <p v-else-if="googleConnected" class="text-xs text-green-600 flex items-center gap-1">
                 <span class="w-1.5 h-1.5 bg-green-500 rounded-full inline-block"></span>
                 Connected · Calendar access enabled
@@ -223,7 +223,7 @@
             <button
               v-if="googleStatusLoading"
               disabled
-              class="px-4 py-2 text-sm font-medium text-gray-400 border border-gray-200 rounded-lg cursor-not-allowed"
+              class="px-4 py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg cursor-not-allowed"
             >
               Loading...
             </button>
@@ -305,8 +305,8 @@
     <!-- Change Password Modal -->
     <Transition name="fade">
       <div v-if="showPasswordModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closePasswordModal"></div>
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 z-10">
+        <div class="absolute inset-0 bg-black/40" @click="closePasswordModal"></div>
+        <div class="relative bg-white rounded-lg shadow-md w-full max-w-md p-6 z-10">
           <h3 class="text-lg font-semibold text-gray-900 mb-1">Change Password</h3>
           <p class="text-sm text-gray-500 mb-5">Enter your current password, then choose a new one.</p>
 

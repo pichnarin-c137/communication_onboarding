@@ -3,16 +3,18 @@
 export interface LoginCredentials {
   identifier: string
   password: string
+  remember_me?: boolean
 }
 
 export interface OTPData {
   identifier: string
   otp: string
+  remember_me?: boolean
 }
 
-export interface RefreshTokenData {}
+export interface RefreshTokenData { }
 
-export interface LogoutData {}
+export interface LogoutData { }
 
 //  User Profile
 
@@ -70,7 +72,7 @@ export interface ProfileResponse {
   data: UserProfile
 }
 
-//  Error Messages 
+//  Error Messages
 
 export enum AuthErrorMessages {
   INVALID_CREDENTIALS = 'Invalid credentials. Please check your email and password.',

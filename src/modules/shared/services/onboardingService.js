@@ -18,6 +18,11 @@ export const onboardingService = {
     return response.data
   },
 
+  async startOnboarding(id) {
+    const response = await api.patch(`/onboarding/${id}/start`)
+    return response.data
+  },
+
   async completeOnboarding(id) {
     const response = await api.patch(`/onboarding/${id}/complete`)
     return response.data
@@ -70,8 +75,13 @@ export const onboardingService = {
     return response.data
   },
 
-  async checkPolicy(onboardingId, policyId) {
-    const response = await api.patch(`/onboarding/${onboardingId}/policies/${policyId}/check`)
+    async checkPolicy(onboardingId, policyId) {
+      const response = await api.patch(`/onboarding/${onboardingId}/policies/${policyId}/check`)
+      return response.data
+    },
+
+  async uncheckPolicy(onboardingId, policyId) {
+    const response = await api.patch(`/onboarding/${onboardingId}/policies/${policyId}/uncheck`)
     return response.data
   },
 
@@ -81,6 +91,12 @@ export const onboardingService = {
   },
 
   // Lessons
+
+  // Global playlist of available training videos — delegates to lessonService
+  async getPlaylistLessons(params = {}) {
+    const { lessonService } = await import('./lessonService.js')
+    return lessonService.getAll(params)
+  },
 
   async getLessons(onboardingId) {
     const response = await api.get(`/onboarding/${onboardingId}/lessons`)
@@ -108,8 +124,9 @@ export const onboardingService = {
     return response.data
   },
 
-  async sendLesson(onboardingId, lessonId) {
-    const response = await api.post(`/onboarding/${onboardingId}/lessons/${lessonId}/send`)
+  async sendLesson(onboardingId, lessonId, message) {
+    const body = message ? { message } : {}
+    const response = await api.post(`/onboarding/${onboardingId}/lessons/${lessonId}/send`, body)
     return response.data
   }
 }

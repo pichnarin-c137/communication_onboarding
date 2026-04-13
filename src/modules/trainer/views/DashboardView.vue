@@ -58,7 +58,7 @@
         <SkeletonLoader v-if="loading" type="list" :count="3" />
         <div v-else-if="todayAppointments.length === 0" class="py-8 text-center">
           <CalendarDaysIcon class="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p class="text-sm text-gray-400">No appointments today</p>
+          <p class="text-sm text-gray-500">No appointments today</p>
         </div>
         <div v-else class="space-y-3">
           <div
@@ -98,7 +98,7 @@
         <SkeletonLoader v-if="loading" type="list" :count="3" />
         <div v-else-if="onboardingProgress.length === 0" class="py-8 text-center">
           <ClipboardDocumentListIcon class="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p class="text-sm text-gray-400">No active onboardings</p>
+          <p class="text-sm text-gray-500">No active onboardings</p>
         </div>
         <div v-else class="space-y-4">
           <div
@@ -116,7 +116,7 @@
             <div class="w-full bg-gray-100 rounded-full h-2">
               <div class="bg-primary h-2 rounded-full transition-all" :style="{ width: `${ob.progress_percentage}%` }"></div>
             </div>
-            <p class="text-xs text-gray-400 mt-1">{{ ob.system?.name }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ ob.system?.name }}</p>
           </div>
         </div>
       </div>
@@ -147,7 +147,7 @@
                 {{ formatDate(appt.scheduled_date) }} · {{ formatTime(appt.scheduled_start_time) }}
                 · <span class="capitalize">{{ appt.location_type }}</span>
               </p>
-              <p class="text-xs text-gray-400 truncate mt-0.5">{{ appt.client?.company_name }}</p>
+              <p class="text-xs text-gray-500 truncate mt-0.5">{{ appt.client?.company_name }}</p>
             </div>
             <StatusBadge :status="appt.status" />
           </div>

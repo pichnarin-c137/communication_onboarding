@@ -7,6 +7,7 @@ import type { UserProfile, LoginCredentials } from '../types'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<UserProfile | null>(null)
   const pendingIdentifier = ref<string | null>(null)
+  const pendingRememberMe = ref(false)
   const error = ref<string | null>(null)
   const loading = ref(false)
   const accessToken = ref<string | null>(null)
@@ -23,6 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await AuthService.login(credentials)
       pendingIdentifier.value = response.data.email
+      pendingRememberMe.value = Boolean(credentials.remember_me)
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : String(err)
       throw err
@@ -37,11 +39,16 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     loading.value = true
     try {
-      const response = await AuthService.verifyOtp({ identifier, otp })
+      const response = await AuthService.verifyOtp({
+        identifier,
+        otp,
+        remember_me: pendingRememberMe.value,
+      })
       accessToken.value = response.data.access_token
       setAccessToken(response.data.access_token)
       user.value = response.data.user
       pendingIdentifier.value = null
+      pendingRememberMe.value = false
 
       silentGpsCheckin()
     } catch (err: unknown) {
@@ -107,6 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       user.value = null
       pendingIdentifier.value = null
+      pendingRememberMe.value = false
       accessToken.value = null
       setAccessToken(null)
       bootstrapped.value = false
@@ -135,6 +143,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     pendingIdentifier,
+    pendingRememberMe,
     error,
     loading,
     accessToken,

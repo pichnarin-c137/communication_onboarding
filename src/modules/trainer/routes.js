@@ -12,6 +12,12 @@ export default [
     meta: { layout: 'trainer', title: 'My Appointments', role: 'trainer' }
   },
   {
+    path: '/trainer/appointments/create',
+    name: 'TrainerCreateAppointment',
+    component: () => import('@/modules/sale/views/CreateAppointmentView.vue'),
+    meta: { layout: 'trainer', title: 'Create Appointment', role: 'trainer' }
+  },
+  {
     path: '/trainer/appointments/:id',
     name: 'TrainerAppointmentDetail',
     component: () => import('@/modules/trainer/views/AppointmentDetailView.vue'),
@@ -36,6 +42,12 @@ export default [
     meta: { layout: 'trainer', title: 'Onboarding Detail', role: 'trainer' }
   },
   {
+    path: '/trainer/lessons',
+    name: 'TrainerLessons',
+    component: () => import('@/modules/trainer/views/LessonsView.vue'),
+    meta: { layout: 'trainer', title: 'Lessons Playlist', role: 'trainer' }
+  },
+  {
     path: '/trainer/calendar',
     name: 'TrainerCalendar',
     component: () => import('@/modules/trainer/views/CalendarView.vue'),
@@ -52,5 +64,11 @@ export default [
     name: 'TrainerNotifications',
     component: () => import('@/modules/trainer/views/NotificationView.vue'),
     meta: { layout: 'trainer', title: 'Notifications', role: 'trainer' }
+  },
+  {
+    path: '/trainer/settings',
+    name: 'TrainerSettings',
+    component: () => import('@/modules/shared/views/SettingsView.vue'),
+    meta: { layout: 'trainer', title: 'Settings', role: 'trainer' }
   }
 ]

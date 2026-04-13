@@ -20,6 +20,11 @@
     </div>
 
     <template v-if="!loading && appointment">
+      <!-- === Session Journey — full-width, always first === -->
+      <div v-if="['leave_office','in_progress','done','cancelled','rescheduled'].includes(appointment.status)" class="mb-5">
+        <AppointmentJourney :appointment="appointment" />
+      </div>
+
       <!-- === Two-column layout when map is available === -->
       <div v-if="hasTravelMap" class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <!-- LEFT: Sticky map — isolate creates a stacking context so Leaflet z-indices stay contained -->
@@ -331,7 +336,7 @@
       <Transition name="fade">
         <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           @click.self="showCancelModal = false">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div class="bg-white rounded-lg shadow-md max-w-sm w-full p-6 space-y-4">
             <h3 class="text-lg font-semibold text-gray-900">Cancel Appointment</h3>
             <p class="text-sm text-gray-600">Are you sure you want to cancel this appointment?</p>
             <div>
@@ -372,7 +377,7 @@
       <Transition name="fade">
         <div v-if="showTrainerInfoPopup" class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4"
           @click.self="showTrainerInfoPopup = false">
-          <div class="bg-white rounded-xl shadow-lg max-w-sm w-full p-5 space-y-4">
+          <div class="bg-white rounded-lg shadow-md max-w-sm w-full p-5 space-y-4">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-gray-900">Trainer Information</h3>
               <button @click="showTrainerInfoPopup = false" class="p-1 hover:bg-gray-100 rounded transition-colors">
@@ -464,6 +469,7 @@ import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import AppTimePicker from '@/modules/shared/components/AppTimePicker.vue'
+import AppointmentJourney from '@/modules/shared/components/AppointmentJourney.vue'
 import { useMap } from '@/modules/shared/composables/useMap.js'
 
 const route = useRoute()
@@ -473,6 +479,8 @@ const { formatDateMed: formatDate, formatTime, formatTimeFromISO } = useDateTime
 
 const appointment = ref(null)
 const travelEstimates = ref(null)
+const startProofMedia = ref(null)
+const endProofMedia = ref(null)
 const loading = ref(true)
 const cancelling = ref(false)
 const showCancelModal = ref(false)
@@ -554,6 +562,8 @@ async function loadAppointment() {
     const response = await saleService.getAppointment(route.params.id)
     appointment.value = response.data
     travelEstimates.value = response.travel_estimates ?? null
+    startProofMedia.value = response.start_proof ?? null
+    endProofMedia.value = response.end_proof ?? null
   } catch {
     appointment.value = null
     travelEstimates.value = null

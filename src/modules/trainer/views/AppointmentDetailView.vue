@@ -7,7 +7,7 @@
           class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors shrink-0">
           <ChevronLeftIcon class="w-5 h-5" />
         </button>
-        <div class="min-w-0">
+      <div class="min-w-0">
           <h1 class="text-xl font-bold text-gray-900 truncate">{{ appt?.title || 'Appointment' }}</h1>
           <p class="text-sm text-gray-500 mt-0.5">{{ appt?.client?.company_name }}</p>
         </div>
@@ -21,13 +21,16 @@
 
     <template v-if="!loading && appt">
       <div v-if="hasTravelMap" class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-        <div class="lg:sticky lg:top-4 bg-white rounded-xl border border-gray-200 overflow-hidden relative">
-          <div ref="mapContainer" class="w-full h-72 lg:h-[520px]"></div>
-           <button @click="isMapFullscreen = true"
+        <!-- isolate creates a stacking context so Leaflet z-indices stay contained -->
+        <div class="lg:sticky lg:top-4 bg-white rounded-xl border border-gray-200 overflow-hidden relative isolate">
+          <div ref="mapContainer" class="w-full h-72 lg:h-[520px] relative">
+            <!-- Fullscreen button overlay -->
+            <button @click="isMapFullscreen = true"
               class="absolute top-3 left-3 p-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-50 transition-colors z-50 pointer-events-auto"
               title="View fullscreen" style="position: absolute; top: 12px; left: 12px; z-index: 1000;">
               <ArrowsPointingOutIcon class="w-4 h-4 text-gray-700" />
             </button>
+          </div>
           <span v-if="currentEstimate?.source" :class="['absolute top-3 right-3 text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm z-[500]',
             currentEstimate.source === 'osrm' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700']">
             {{ currentEstimate.source === 'osrm' ? 'Route-based' : 'Straight-line' }}
@@ -36,9 +39,11 @@
             <div class="flex items-center gap-1.5 min-w-0">
               <span :class="['w-2 h-2 rounded-full shrink-0', trainerStatusDot]"></span>
               <span class="text-gray-600 truncate">
-                {{ trainerPosition?.name || 'Trainer' }}
-                <template v-if="trainerPosition?.status"> &middot;
-                  <span class="capitalize">{{ trainerPosition.status }}</span>
+                Current Location
+                <template v-if="trainerPosition?.status === 'at_office'"> &middot;
+                  <span class="text-blue-600">At office</span>
+                  <span v-if="trainerPosition.branch_name" class="text-gray-400"> ({{ trainerPosition.branch_name
+                    }})</span>
                 </template>
               </span>
             </div>
@@ -49,13 +54,60 @@
         </div>
 
         <div class="space-y-4">
-          <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <!-- Header -->
             <div class="flex items-center justify-between">
               <h2 class="text-sm font-semibold text-gray-900">Travel Estimate</h2>
-              <span class="text-xs text-primary font-semibold">{{ formatEta(currentEstimate?.eta_minutes) }}</span>
+              <span v-if="currentEstimate?.source" :class="['text-[10px] font-medium px-2 py-0.5 rounded-full',
+                currentEstimate.source === 'osrm' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700']">
+                {{ currentEstimate.source === 'osrm' ? 'Route-based' : 'Straight-line' }}
+              </span>
             </div>
-            <div class="text-xs text-gray-500">
-              {{ formatDistance(currentEstimate?.distance_meters) }}
+
+            <!-- ETA hero -->
+            <div class="text-center py-1">
+              <p class="text-3xl font-bold text-primary">{{ formatEta(currentEstimate?.eta_minutes) }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ formatDistance(currentEstimate?.distance_meters) }}</p>
+            </div>
+
+            <!-- From (trainer's current position) → To (client) -->
+            <div class="space-y-2">
+              <div class="flex items-start gap-3">
+                <div class="mt-1 w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0 ring-2 ring-blue-100"></div>
+                <div class="min-w-0">
+                  <p class="text-[10px] uppercase tracking-wide text-gray-400">My Location</p>
+                  <p class="text-sm font-medium text-gray-900 truncate">
+                    <template v-if="trainerPosition?.active && trainerPosition?.status === 'traveling'">
+                      En Route
+                      <span v-if="trainerPosition.distance_from_branch_m" class="text-xs text-gray-400 font-normal">
+                        · {{ formatDistance(trainerPosition.distance_from_branch_m) }} from office
+                      </span>
+                    </template>
+                    <template v-else-if="trainerPosition?.active">
+                      {{ trainerPosition.branch_name || currentEstimate?.origin?.label || 'Current location' }}
+                    </template>
+                    <template v-else>
+                      {{ currentEstimate?.origin?.label || 'Office' }}
+                    </template>
+                  </p>
+                </div>
+              </div>
+              <div class="ml-[5px] w-px h-3 bg-gray-200"></div>
+              <div class="flex items-start gap-3">
+                <div class="mt-1 w-2.5 h-2.5 rounded-full bg-red-500 shrink-0 ring-2 ring-red-100"></div>
+                <div class="min-w-0">
+                  <p class="text-[10px] uppercase tracking-wide text-gray-400">Client</p>
+                  <p class="text-sm font-medium text-gray-900 truncate">
+                    {{ currentEstimate?.destination?.label || appt?.client?.company_name }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Session duration -->
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100 text-sm">
+              <span class="text-gray-500">Session Duration</span>
+              <span class="font-medium text-gray-900">{{ computeSessionDuration() }}</span>
             </div>
           </div>
 
@@ -243,7 +295,7 @@
       <Transition name="fade">
         <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           @click.self="showCancelModal = false">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div class="bg-white rounded-lg shadow-md max-w-sm w-full p-6 space-y-4">
             <h3 class="text-lg font-semibold text-gray-900">Cancel Appointment</h3>
             <p class="text-sm text-gray-600">Are you sure you want to cancel this appointment?</p>
             <div>
@@ -266,7 +318,7 @@
 
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="isMapFullscreen" class="fixed inset-0 bg-gray-900 z-50 flex flex-col">
+        <div v-if="isMapFullscreen" class="fixed inset-0 bg-gray-900 z-[60] flex flex-col">
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800">
             <h3 class="text-lg font-semibold text-white">{{ appt?.title || 'Appointment Map' }}</h3>
             <button @click="isMapFullscreen = false" class="p-2 hover:bg-gray-700 rounded-lg transition-colors">
@@ -328,7 +380,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { formatDateMed: formatDate, formatTime, formatTimeFromISO } = useDateTime()
-const { startTracking, stopTracking, resumeIfActive } = useTrainerTracking()
+const { startTracking, stopTracking } = useTrainerTracking()
 
 const appt = ref(null)
 const travelEstimates = ref(null)
@@ -388,6 +440,19 @@ function formatDistance(meters) {
   if (!meters && meters !== 0) return '—'
   if (meters < 1000) return `${meters} m`
   return `${(meters / 1000).toFixed(1)} km`
+}
+
+function computeSessionDuration() {
+  const a = appt.value
+  if (!a?.scheduled_start_time || !a?.scheduled_end_time) return '—'
+  const [sh, sm] = a.scheduled_start_time.split(':').map(Number)
+  const [eh, em] = a.scheduled_end_time.split(':').map(Number)
+  const mins = (eh * 60 + em) - (sh * 60 + sm)
+  if (mins <= 0) return '—'
+  if (mins < 60) return `${mins} min`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
 async function handleLeaveOffice() {
@@ -460,9 +525,7 @@ watch(currentEstimate, async (est) => {
   await nextTick()
   if (!mapContainer.value) return
 
-  routeMap.destroy()
   routeMap.init(mapContainer.value, { zoomControl: false, attributionControl: false })
-  routeMap.invalidateSize()
 
   const tp = trainerPosition.value
   const trainerName = tp?.name || 'Trainer'
@@ -490,7 +553,7 @@ watch(isMapFullscreen, async (fullscreen) => {
     routeMapFullscreen.destroy()
     routeMapFullscreen.init(fullscreenMapContainer.value, { zoomControl: true, attributionControl: false })
 
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise(resolve => setTimeout(resolve, 500))
     routeMapFullscreen.invalidateSize()
 
     const est = currentEstimate.value
@@ -517,7 +580,6 @@ watch(isMapFullscreen, async (fullscreen) => {
 
 onMounted(async () => {
   await load()
-  resumeIfActive()
 })
 
 onBeforeUnmount(() => {

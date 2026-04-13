@@ -5,10 +5,10 @@
         class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop"
         @click.self="close">
         <div
-          class="bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-2xl">
+          class="bg-white w-full sm:rounded-lg sm:shadow-md sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-lg">
           <!-- Header -->
           <div
-            class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+            class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-lg">
             <h3 class="text-base font-semibold text-gray-900">New Appointment</h3>
             <button @click="close"
               class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">

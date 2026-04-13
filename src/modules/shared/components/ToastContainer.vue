@@ -5,7 +5,7 @@
         v-for="toast in toasts"
         :key="toast.id"
         :class="[
-          'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium',
+          'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-sm border text-sm font-medium',
           toastClasses(toast.type)
         ]"
       >

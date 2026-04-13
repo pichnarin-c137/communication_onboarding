@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="open" class="fixed inset-0 z-[90] flex items-center justify-center p-4 modal-backdrop" @click.self="$emit('cancel')">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+        <div class="bg-white rounded-lg shadow-md max-w-sm w-full p-6">
           <div class="flex items-center gap-3 mb-4">
             <div :class="['w-10 h-10 rounded-full flex items-center justify-center', iconBg]">
               <ExclamationTriangleIcon v-if="type === 'warning'" class="w-5 h-5 text-amber-600" />

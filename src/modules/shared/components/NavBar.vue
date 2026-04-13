@@ -62,7 +62,7 @@
           <Transition name="slide-down">
             <div
               v-if="showNotifications"
-              class="absolute right-0 top-full mt-2 w-96 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden flex flex-col"
+              class="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-md border border-gray-200 z-50 overflow-hidden flex flex-col"
               style="max-height: 520px"
             >
               <!-- Dropdown header -->
@@ -171,7 +171,7 @@
           <Transition name="slide-down">
             <div
               v-if="showUserMenu"
-              class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50"
+              class="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-md border border-gray-200 py-1 z-50"
               @click="showUserMenu = false"
             >
               <div class="px-4 py-2.5 border-b border-gray-100">

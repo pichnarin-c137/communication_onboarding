@@ -1,15 +1,14 @@
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div
-        v-if="eventStore.isDetailsModalOpen"
+      <div v-if="eventStore.isDetailsModalOpen"
         class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop"
-        @click.self="close"
-      >
-        <div class="bg-white w-full sm:rounded-2xl sm:shadow-2xl sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-2xl">
+        @click.self="close">
+        <div
+          class="bg-white w-full sm:rounded-lg sm:shadow-md sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-lg">
 
           <!-- Status colour bar -->
-          <div class="h-1.5 rounded-t-2xl transition-colors" :style="{ backgroundColor: statusBarColor }"></div>
+          <div class="h-1.5 rounded-t-lg transition-colors" :style="{ backgroundColor: statusBarColor }"></div>
 
           <!-- Loading state -->
           <div v-if="fetching" class="p-8 flex items-center justify-center">
@@ -21,14 +20,16 @@
             <div class="flex items-start gap-3 px-5 pt-4 pb-3">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1 flex-wrap">
-                  <span :class="['text-xs font-semibold px-2 py-0.5 rounded-full capitalize', appt.appointment_type === 'demo' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700']">
+                  <span
+                    :class="['text-xs font-semibold px-2 py-0.5 rounded-full capitalize', appt.appointment_type === 'demo' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700']">
                     {{ appt.appointment_type }}
                   </span>
                   <StatusBadge :status="appt.status" />
                 </div>
                 <h3 v-if="appt.title" class="text-base font-bold text-gray-900 leading-snug">{{ appt.title }}</h3>
               </div>
-              <button @click="close" class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <button @click="close"
+                class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <XMarkIcon class="w-5 h-5" />
               </button>
             </div>
@@ -44,12 +45,12 @@
                 <span v-if="appt.physical_location" class="text-gray-500 ml-1">· {{ appt.physical_location }}</span>
               </DetailRow>
               <DetailRow v-if="appt.meeting_link" :icon="LinkIcon">
-                <a :href="appt.meeting_link" target="_blank" class="text-primary hover:underline truncate block max-w-[280px]">
+                <a :href="appt.meeting_link" target="_blank"
+                  class="text-primary hover:underline truncate block max-w-[280px]">
                   {{ appt.meeting_link }}
                 </a>
               </DetailRow>
               <DetailRow :icon="BuildingOfficeIcon">{{ appt.client?.company_name }}</DetailRow>
-              <DetailRow :icon="ComputerDesktopIcon">{{ appt.system?.name }}</DetailRow>
               <DetailRow v-if="appt.trainer" :icon="UserIcon">
                 {{ appt.trainer.first_name }} {{ appt.trainer.last_name }}
               </DetailRow>
@@ -66,47 +67,38 @@
                   <div class="grid gap-2">
 
                     <!-- Leave Office: physical/hybrid pending -->
-                    <button
-                      v-if="canLeaveOffice"
-                      @click="mode = 'leave_office'"
-                      class="w-full py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors"
-                    >
+                    <button v-if="canLeaveOffice" @click="mode = 'leave_office'"
+                      class="w-full py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors">
                       Leave Office
                     </button>
 
                     <!-- Start: online pending OR after leave_office -->
-                    <button
-                      v-if="canStart"
-                      @click="mode = 'start'"
-                      class="w-full py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors"
-                    >
+                    <button v-if="canStart" @click="mode = 'start'"
+                      class="w-full py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors">
                       Start Appointment
                     </button>
 
                     <!-- Complete: in_progress -->
-                    <button
-                      v-if="canComplete"
-                      @click="mode = 'complete'"
-                      class="w-full py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
-                    >
+                    <button v-if="canComplete" @click="mode = 'complete'"
+                      class="w-full py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors">
                       Complete Appointment
                     </button>
 
                     <!-- Add Students: in_progress -->
-                    <button
-                      v-if="canComplete"
-                      @click="mode = 'students'"
-                      class="w-full py-2.5 text-sm font-medium text-emerald-700 border border-emerald-300 rounded-xl hover:bg-emerald-50 transition-colors"
-                    >
+                    <button v-if="canComplete" @click="mode = 'students'"
+                      class="w-full py-2.5 text-sm font-medium text-emerald-700 border border-emerald-300 rounded-xl hover:bg-emerald-50 transition-colors">
                       Add / Mark Students
                     </button>
                   </div>
 
                   <!-- Secondary actions -->
                   <div v-if="canEdit || canReschedule || canCancel" class="grid grid-cols-3 gap-2 mt-2">
-                    <button v-if="canEdit" @click="initEdit()" class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Edit</button>
-                    <button v-if="canReschedule" @click="mode = 'reschedule'" class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Reschedule</button>
-                    <button v-if="canCancel" @click="mode = 'cancel'" class="py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">Cancel</button>
+                    <button v-if="canEdit" @click="initEdit()"
+                      class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Edit</button>
+                    <button v-if="canReschedule" @click="mode = 'reschedule'"
+                      class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Reschedule</button>
+                    <button v-if="canCancel" @click="mode = 'cancel'"
+                      class="py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">Cancel</button>
                   </div>
                 </div>
 
@@ -114,12 +106,14 @@
                 <div v-if="appt.students?.length" class="border-t border-gray-100 pt-3">
                   <p class="text-xs font-semibold text-gray-700 mb-2">Students ({{ appt.students.length }})</p>
                   <div class="space-y-1.5 max-h-40 overflow-y-auto">
-                    <div v-for="s in appt.students" :key="s.id" class="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-gray-50">
+                    <div v-for="s in appt.students" :key="s.id"
+                      class="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-gray-50">
                       <div>
                         <span class="font-medium text-gray-900">{{ s.name }}</span>
-                        <span class="text-gray-400 ml-1.5">{{ s.profession }}</span>
+                        <span class="text-gray-500 ml-1.5">{{ s.profession }}</span>
                       </div>
-                      <span v-if="s.attendance_status" :class="['font-medium px-1.5 py-0.5 rounded-full text-[10px]', s.attendance_status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
+                      <span v-if="s.attendance_status"
+                        :class="['font-medium px-1.5 py-0.5 rounded-full text-[10px]', s.attendance_status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
                         {{ s.attendance_status }}
                       </span>
                     </div>
@@ -127,35 +121,40 @@
                 </div>
               </div>
 
-              <!-- ---- LEAVE OFFICE sub-panel ---- -->
+              <!--  LEAVE OFFICE sub-panel  -->
               <ActionPanel v-if="mode === 'leave_office'" title="Leave Office" @back="mode = 'view'">
                 <p class="text-xs text-gray-500 mb-3">Your current GPS location will be recorded when you confirm.</p>
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" />
                 <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
                 <div class="flex gap-2 mt-4">
-                  <button @click="mode = 'view'" class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                  <button @click="doLeaveOffice" :disabled="actionLoading" class="flex-1 py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 disabled:opacity-60">
+                  <button @click="mode = 'view'"
+                    class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
+                  <button @click="doLeaveOffice" :disabled="actionLoading"
+                    class="flex-1 py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 disabled:opacity-60">
                     {{ actionLoading ? 'Confirming...' : 'Confirm' }}
                   </button>
                 </div>
               </ActionPanel>
 
-              <!-- ---- START sub-panel ---- -->
+              <!--  START sub-panel  -->
               <ActionPanel v-if="mode === 'start'" title="Start Appointment" @back="mode = 'view'">
-                <ProofUpload label="Start proof photo *" v-model:media-id="action.proofMediaId" :service="trainerService" />
+                <ProofUpload label="Start proof photo *" v-model:media-id="action.proofMedia"
+                  :service="trainerService" />
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" class="mt-3" />
                 <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
                 <div class="flex gap-2 mt-4">
-                  <button @click="mode = 'view'" class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                  <button @click="doStart" :disabled="actionLoading || !action.proofMediaId" class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark disabled:opacity-60">
+                  <button @click="mode = 'view'"
+                    class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
+                  <button @click="doStart" :disabled="actionLoading || !action.proofMedia"
+                    class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark disabled:opacity-60">
                     {{ actionLoading ? 'Starting...' : 'Start' }}
                   </button>
                 </div>
               </ActionPanel>
 
-              <!-- ---- COMPLETE sub-panel ---- -->
+              <!--  COMPLETE sub-panel  -->
               <ActionPanel v-if="mode === 'complete'" title="Complete Appointment" @back="mode = 'view'">
-                <ProofUpload label="End proof photo *" v-model:media-id="action.proofMediaId" :service="trainerService" />
+                <ProofUpload label="End proof photo *" v-model:media-id="action.proofMedia" :service="trainerService" />
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" class="mt-3" />
                 <div class="mt-3">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Number of students *</label>
@@ -169,27 +168,33 @@
                 </div>
                 <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
                 <div class="flex gap-2 mt-4">
-                  <button @click="mode = 'view'" class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                  <button @click="doComplete" :disabled="actionLoading || !action.proofMediaId" class="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:opacity-60">
+                  <button @click="mode = 'view'"
+                    class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
+                  <button @click="doComplete" :disabled="actionLoading || !action.proofMedia"
+                    class="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:opacity-60">
                     {{ actionLoading ? 'Completing...' : 'Complete' }}
                   </button>
                 </div>
               </ActionPanel>
 
-              <!-- ---- ADD/MARK STUDENTS sub-panel ---- -->
+              <!--  ADD/MARK STUDENTS sub-panel  -->
               <ActionPanel v-if="mode === 'students'" title="Students" @back="mode = 'view'">
                 <!-- Existing students with attendance -->
                 <div v-if="appt.students?.length" class="space-y-2 mb-3">
-                  <div v-for="s in appt.students" :key="s.id" class="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 text-xs">
+                  <div v-for="s in appt.students" :key="s.id"
+                    class="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 text-xs">
                     <div>
                       <p class="font-medium text-gray-900">{{ s.name }}</p>
                       <p class="text-gray-400">{{ s.profession }} · {{ s.phone_number }}</p>
                     </div>
                     <div v-if="!s.attendance_status" class="flex gap-1">
-                      <button @click="doMarkAttendance(s.id, 'present')" class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Present</button>
-                      <button @click="doMarkAttendance(s.id, 'absent')"  class="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">Absent</button>
+                      <button @click="doMarkAttendance(s.id, 'present')"
+                        class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Present</button>
+                      <button @click="doMarkAttendance(s.id, 'absent')"
+                        class="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">Absent</button>
                     </div>
-                    <span v-else :class="['font-medium px-2 py-0.5 rounded-full text-[10px]', s.attendance_status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
+                    <span v-else
+                      :class="['font-medium px-2 py-0.5 rounded-full text-[10px]', s.attendance_status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
                       {{ s.attendance_status }}
                     </span>
                   </div>
@@ -197,18 +202,26 @@
 
                 <!-- Add new students -->
                 <p class="text-xs font-semibold text-gray-700 mb-2">Add Students</p>
-                <div v-for="(s, idx) in newStudents" :key="idx" class="grid grid-cols-2 gap-2 mb-2 p-2.5 bg-gray-50 rounded-lg">
-                  <input v-model="s.name" placeholder="Full name *" class="col-span-2 px-2.5 py-2 border border-gray-300 rounded-lg text-xs" />
-                  <input v-model="s.phone_number" placeholder="Phone *" class="px-2.5 py-2 border border-gray-300 rounded-lg text-xs" />
-                  <input v-model="s.profession" placeholder="Profession" class="px-2.5 py-2 border border-gray-300 rounded-lg text-xs" />
-                  <button v-if="newStudents.length > 1" @click="newStudents.splice(idx, 1)" class="col-span-2 text-xs text-red-500 hover:underline text-left">Remove</button>
+                <div v-for="(s, idx) in newStudents" :key="idx"
+                  class="grid grid-cols-2 gap-2 mb-2 p-2.5 bg-gray-50 rounded-lg">
+                  <input v-model="s.name" placeholder="Full name *"
+                    class="col-span-2 px-2.5 py-2 border border-gray-300 rounded-lg text-xs" />
+                  <input v-model="s.phone_number" placeholder="Phone *"
+                    class="px-2.5 py-2 border border-gray-300 rounded-lg text-xs" />
+                  <input v-model="s.profession" placeholder="Profession"
+                    class="px-2.5 py-2 border border-gray-300 rounded-lg text-xs" />
+                  <button v-if="newStudents.length > 1" @click="newStudents.splice(idx, 1)"
+                    class="col-span-2 text-xs text-red-500 hover:underline text-left">Remove</button>
                 </div>
-                <button @click="newStudents.push({ name:'', phone_number:'', profession:'' })" class="text-xs text-primary hover:underline mb-3">+ Add another</button>
+                <button @click="newStudents.push({ name: '', phone_number: '', profession: '' })"
+                  class="text-xs text-primary hover:underline mb-3">+ Add another</button>
 
                 <div v-if="actionError" class="text-sm text-red-600">{{ actionError }}</div>
                 <div class="flex gap-2 mt-2">
-                  <button @click="mode = 'view'" class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                  <button @click="doAddStudents" :disabled="actionLoading" class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl disabled:opacity-60">
+                  <button @click="mode = 'view'"
+                    class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
+                  <button @click="doAddStudents" :disabled="actionLoading"
+                    class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl disabled:opacity-60">
                     {{ actionLoading ? 'Saving...' : 'Save' }}
                   </button>
                 </div>
@@ -223,14 +236,8 @@
                 <div class="border-t border-gray-100 pt-3">
                   <p class="text-xs font-semibold text-gray-700 mb-3">Status Timeline</p>
                   <div class="space-y-2">
-                    <TimelineStep
-                      v-for="step in statusTimeline"
-                      :key="step.status"
-                      :label="step.label"
-                      :timestamp="step.timestamp"
-                      :done="step.done"
-                      :active="step.active"
-                    />
+                    <TimelineStep v-for="step in statusTimeline" :key="step.status" :label="step.label"
+                      :timestamp="step.timestamp" :done="step.done" :active="step.active" />
                   </div>
                 </div>
 
@@ -241,28 +248,29 @@
                       <p class="text-xs font-semibold text-emerald-900">Onboarding Created</p>
                       <p class="text-[10px] text-emerald-700 mt-0.5">{{ appt.onboarding.request_code }}</p>
                     </div>
-                    <router-link
-                      :to="`/sales/onboarding/${appt.onboarding.id}`"
-                      @click="close"
-                      class="text-xs text-emerald-700 font-medium hover:underline"
-                    >
+                    <router-link :to="`/sales/onboarding/${appt.onboarding.id}`" @click="close"
+                      class="text-xs text-emerald-700 font-medium hover:underline">
                       View →
                     </router-link>
                   </div>
                 </div>
 
                 <!-- Sale action buttons -->
-                <div v-if="mode === 'view' && (canEdit || canReschedule || canCancel)" class="grid grid-cols-3 gap-2 pt-1">
-                  <button v-if="canEdit" @click="initEdit()" class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Edit</button>
-                  <button v-if="canReschedule" @click="mode = 'reschedule'" class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Reschedule</button>
-                  <button v-if="canCancel" @click="mode = 'cancel'" class="py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">Cancel</button>
+                <div v-if="mode === 'view' && (canEdit || canReschedule || canCancel)"
+                  class="grid grid-cols-3 gap-2 pt-1">
+                  <button v-if="canEdit" @click="initEdit()"
+                    class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Edit</button>
+                  <button v-if="canReschedule" @click="mode = 'reschedule'"
+                    class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Reschedule</button>
+                  <button v-if="canCancel" @click="mode = 'cancel'"
+                    class="py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">Cancel</button>
                 </div>
               </div>
             </template>
 
             <!--  SHARED ACTION PANELS (sale + trainer)  -->
 
-            <!-- ---- CANCEL sub-panel ---- -->
+            <!--  CANCEL sub-panel  -->
             <ActionPanel v-if="mode === 'cancel'" title="Cancel Appointment" @back="mode = 'view'">
               <p class="text-xs text-gray-500 mb-3">This action cannot be undone.</p>
               <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason (optional)</label>
@@ -270,28 +278,33 @@
                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
               <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
               <div class="flex gap-2 mt-4">
-                <button @click="mode = 'view'" class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                <button @click="doCancel" :disabled="actionLoading" class="flex-1 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-60">
+                <button @click="mode = 'view'"
+                  class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
+                <button @click="doCancel" :disabled="actionLoading"
+                  class="flex-1 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-60">
                   {{ actionLoading ? 'Cancelling...' : 'Confirm Cancel' }}
                 </button>
               </div>
             </ActionPanel>
 
-            <!-- ---- RESCHEDULE sub-panel ---- -->
+            <!--  RESCHEDULE sub-panel  -->
             <ActionPanel v-if="mode === 'reschedule'" title="Reschedule" @back="mode = 'view'">
               <div class="space-y-3">
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">New Date *</label>
-                  <input v-model="action.date" type="date" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                  <input v-model="action.date" type="date"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">Start *</label>
-                    <input v-model="action.startTime" type="time" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                    <input v-model="action.startTime" type="time"
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">End *</label>
-                    <input v-model="action.endTime" type="time" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                    <input v-model="action.endTime" type="time"
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                   </div>
                 </div>
                 <div>
@@ -302,23 +315,27 @@
               </div>
               <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
               <div class="flex gap-2 mt-4">
-                <button @click="mode = 'view'" class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                <button @click="doReschedule" :disabled="actionLoading" class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl disabled:opacity-60">
+                <button @click="mode = 'view'"
+                  class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
+                <button @click="doReschedule" :disabled="actionLoading"
+                  class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl disabled:opacity-60">
                   {{ actionLoading ? 'Saving...' : 'Confirm' }}
                 </button>
               </div>
             </ActionPanel>
 
-            <!-- ---- EDIT sub-panel ---- -->
+            <!--  EDIT sub-panel  -->
             <ActionPanel v-if="mode === 'edit'" title="Edit Appointment" @back="mode = 'view'">
               <div class="space-y-3">
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Title *</label>
-                  <input v-model="editForm.title" type="text" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                  <input v-model="editForm.title" type="text"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Location Type</label>
-                  <select v-model="editForm.location_type" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white">
+                  <select v-model="editForm.location_type"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white">
                     <option value="physical">Physical</option>
                     <option value="online">Online</option>
                     <option value="hybrid">Hybrid</option>
@@ -327,30 +344,37 @@
                 <div class="grid grid-cols-2 gap-3">
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">Start time</label>
-                    <input v-model="editForm.scheduled_start_time" type="time" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                    <input v-model="editForm.scheduled_start_time" type="time"
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">End time</label>
-                    <input v-model="editForm.scheduled_end_time" type="time" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                    <input v-model="editForm.scheduled_end_time" type="time"
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                   </div>
                 </div>
                 <div v-if="editForm.location_type !== 'physical'">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Meeting Link</label>
-                  <input v-model="editForm.meeting_link" type="url" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                  <input v-model="editForm.meeting_link" type="url"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                 </div>
                 <div v-if="editForm.location_type !== 'online'">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Physical Location</label>
-                  <input v-model="editForm.physical_location" type="text" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                  <input v-model="editForm.physical_location" type="text"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Notes</label>
-                  <textarea v-model="editForm.notes" rows="2" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
+                  <textarea v-model="editForm.notes" rows="2"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
                 </div>
               </div>
               <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
               <div class="flex gap-2 mt-4">
-                <button @click="mode = 'view'" class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                <button @click="doEdit" :disabled="actionLoading" class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl disabled:opacity-60">
+                <button @click="mode = 'view'"
+                  class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
+                <button @click="doEdit" :disabled="actionLoading"
+                  class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl disabled:opacity-60">
                   {{ actionLoading ? 'Saving...' : 'Save Changes' }}
                 </button>
               </div>
@@ -359,7 +383,7 @@
           </template>
 
           <!-- Error fallback -->
-          <div v-else-if="!fetching" class="p-8 text-center text-sm text-gray-400">
+          <div v-else-if="!fetching" class="p-8 text-center text-sm text-gray-500">
             Could not load appointment.
           </div>
 
@@ -381,8 +405,6 @@ import {
   BuildingOfficeIcon,
   UserIcon,
   ClipboardDocumentIcon,
-  ComputerDesktopIcon,
-  ChevronRightIcon
 } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useEventStore } from '@/modules/shared/store/events.js'
@@ -407,7 +429,6 @@ const ActionPanel = (props, { slots }) =>
     ...(slots.default?.() || [])
   ])
 ActionPanel.props = ['title']
-ActionPanel.emits = ['back']
 
 const TimelineStep = (props) =>
   h('div', { class: 'flex items-center gap-3' }, [
@@ -461,7 +482,7 @@ const GpsCapture = {
         h('span', { class: 'text-xs font-medium text-gray-700' }, 'GPS Location *'),
         h('button', {
           type: 'button', onClick: get, disabled: getting.value,
-          class: 'text-xs text-primary hover:underline disabled:opacity-40'
+          class: 'text-xs text-primary hover:underline disabled:opacity-50'
         }, getting.value ? 'Getting...' : 'Auto-detect')
       ]),
       h('div', { class: 'grid grid-cols-2 gap-2' }, [
@@ -470,7 +491,7 @@ const GpsCapture = {
       ]),
       err.value
         ? h('p', { class: 'text-xs text-amber-600 mt-1' }, err.value)
-        : (props.lat && props.lng ? h('p', { class: 'text-xs text-emerald-600 mt-1' }, '📍 Location captured') : null)
+        : (props.lat && props.lng ? h('p', { class: 'text-xs text-emerald-600 mt-1' }, 'Location captured') : null)
     ])
   }
 }
@@ -488,8 +509,8 @@ const ProofUpload = {
       if (!file) return
       uploading.value = true; err.value = null; done.value = false
       try {
-        const result = await props.service.uploadProofPhoto(file)
-        emit('update:mediaId', result.id)
+        const base64 = await fileToDataUrl(file)
+        emit('update:mediaId', base64)
         done.value = true
       } catch (ex) {
         err.value = ex.message || 'Upload failed'
@@ -504,14 +525,23 @@ const ProofUpload = {
         class: 'block w-full text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark'
       }),
       uploading.value
-        ? h('p', { class: 'text-xs text-gray-400 mt-1' }, 'Uploading...')
+        ? h('p', { class: 'text-xs text-gray-400 mt-1' }, 'Preparing image...')
         : done.value
-          ? h('p', { class: 'text-xs text-emerald-600 mt-1' }, '✓ Photo uploaded')
+          ? h('p', { class: 'text-xs text-emerald-600 mt-1' }, 'Photo ready')
           : err.value
             ? h('p', { class: 'text-xs text-red-500 mt-1' }, err.value)
             : null
     ])
   }
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('Failed to read selected image'))
+    reader.readAsDataURL(file)
+  })
 }
 
 // Main component
@@ -529,7 +559,7 @@ const actionError = ref(null)
 
 const action = reactive({
   lat: null, lng: null,
-  proofMediaId: null,
+  proofMedia: null,
   studentCount: 0,
   notes: '',
   reason: '',
@@ -558,10 +588,10 @@ const canStart = computed(() =>
   appt.value?.status === 'leave_office' ||
   (appt.value?.status === 'pending' && appt.value?.location_type === 'online')
 )
-const canComplete   = computed(() => appt.value?.status === 'in_progress')
-const canEdit       = computed(() => appt.value?.status === 'pending')
-const canReschedule = computed(() => appt.value?.status === 'pending')
-const canCancel     = computed(() => {
+const canComplete = computed(() => appt.value?.status === 'in_progress')
+const canEdit = computed(() => appt.value?.status === 'pending')
+const canReschedule = canEdit
+const canCancel = computed(() => {
   if (!['pending', 'leave_office', 'in_progress'].includes(appt.value?.status)) return false
   if (authStore.isTrainer && appt.value?.creator_id !== authStore.userId) return false
   return true
@@ -569,10 +599,10 @@ const canCancel     = computed(() => {
 
 // Status timeline for sale
 const TIMELINE = [
-  { status: 'pending',      label: 'Appointment Scheduled' },
+  { status: 'pending', label: 'Appointment Scheduled' },
   { status: 'leave_office', label: 'Trainer Left Office' },
-  { status: 'in_progress',  label: 'Session In Progress' },
-  { status: 'done',         label: 'Appointment Done' }
+  { status: 'in_progress', label: 'Session In Progress' },
+  { status: 'done', label: 'Appointment Done' }
 ]
 const STATUS_ORDER = ['pending', 'leave_office', 'in_progress', 'done']
 
@@ -588,12 +618,12 @@ const statusTimeline = computed(() => {
 
   return steps.map((step) => {
     const idx = STATUS_ORDER.indexOf(step.status)
-    const done   = currentIdx > idx
+    const done = currentIdx > idx
     const active = currentIdx === idx && current !== 'cancelled' && current !== 'rescheduled'
     let timestamp = null
     if (step.status === 'leave_office' && appt.value.leave_office_at) timestamp = formatDateTimeFromISO(appt.value.leave_office_at)
-    if (step.status === 'in_progress'  && appt.value.actual_start_time) timestamp = formatDateTimeFromISO(appt.value.actual_start_time)
-    if (step.status === 'done'         && appt.value.actual_end_time)   timestamp = formatDateTimeFromISO(appt.value.actual_end_time)
+    if (step.status === 'in_progress' && appt.value.actual_start_time) timestamp = formatDateTimeFromISO(appt.value.actual_start_time)
+    if (step.status === 'done' && appt.value.actual_end_time) timestamp = formatDateTimeFromISO(appt.value.actual_end_time)
     return { ...step, done, active, timestamp }
   })
 })
@@ -610,22 +640,22 @@ watch(() => eventStore.isDetailsModalOpen, async (open) => {
   // Pre-populate immediately from calendar event data so modal shows without delay
   if (event.title || event.status) {
     const startStr = typeof event.start === 'string' ? event.start : event.start?.toISOString?.() || ''
-    const endStr   = typeof event.end   === 'string' ? event.end   : event.end?.toISOString?.()   || ''
+    const endStr = typeof event.end === 'string' ? event.end : event.end?.toISOString?.() || ''
     appt.value = {
       id,
-      title:                  event.title         || '',
-      appointment_type:       event.type          || '',
-      status:                 event.status        || '',
-      scheduled_date:         startStr.split('T')[0] || null,
-      scheduled_start_time:   startStr.split('T')[1]?.slice(0, 5) || null,
-      scheduled_end_time:     endStr.split('T')[1]?.slice(0, 5)   || null,
-      location_type:          event.format        || null,
-      physical_location:      event.location      || null,
-      meeting_link:           event.meetingLink   || null,
-      notes:                  event.notes         || null,
-      client:   event.clientName  ? { company_name: event.clientName }  : null,
-      system:   event.systemName  ? { name: event.systemName }          : null,
-      trainer:  event.trainerName ? { first_name: event.trainerName, last_name: '' } : null,
+      title: event.title || '',
+      appointment_type: event.type || '',
+      status: event.status || '',
+      scheduled_date: startStr.split('T')[0] || null,
+      scheduled_start_time: startStr.split('T')[1]?.slice(0, 5) || null,
+      scheduled_end_time: endStr.split('T')[1]?.slice(0, 5) || null,
+      location_type: event.format || null,
+      physical_location: event.location || null,
+      meeting_link: event.meetingLink || null,
+      notes: event.notes || null,
+      client: event.clientName ? { company_name: event.clientName } : null,
+      system: event.systemName ? { name: event.systemName } : null,
+      trainer: event.trainerName ? { first_name: event.trainerName, last_name: '' } : null,
       students: [],
       onboarding: null
     }
@@ -638,7 +668,7 @@ watch(() => eventStore.isDetailsModalOpen, async (open) => {
     const res = await service.getAppointment(id)
     if (res.data) appt.value = res.data
   } catch {
-    if (!appt.value) appt.value = null
+    // appt.value stays pre-populated or null from above
   } finally {
     fetching.value = false
   }
@@ -647,10 +677,7 @@ watch(() => eventStore.isDetailsModalOpen, async (open) => {
 // Reset action state when switching modes
 watch(mode, () => {
   actionError.value = null
-  action.lat = null; action.lng = null
-  action.proofMediaId = null; action.studentCount = 0
-  action.notes = ''; action.reason = ''
-  action.date = ''; action.startTime = ''; action.endTime = ''
+  Object.assign(action, { lat: null, lng: null, proofMedia: null, studentCount: 0, notes: '', reason: '', date: '', startTime: '', endTime: '' })
   newStudents.value = [{ name: '', phone_number: '', profession: '' }]
 })
 
@@ -683,7 +710,7 @@ async function doStart() {
   actionLoading.value = true; actionError.value = null
   try {
     await trainerService.startAppointment(appt.value.id, {
-      start_proof_media_id: action.proofMediaId,
+      start_proof_media: action.proofMedia,
       start_latitude: action.lat || 0,
       start_longitude: action.lng || 0
     })
@@ -698,7 +725,7 @@ async function doComplete() {
   actionLoading.value = true; actionError.value = null
   try {
     await trainerService.completeAppointment(appt.value.id, {
-      end_proof_media_id: action.proofMediaId,
+      end_proof_media: action.proofMedia,
       end_latitude: action.lat || 0,
       end_longitude: action.lng || 0,
       student_count: action.studentCount,

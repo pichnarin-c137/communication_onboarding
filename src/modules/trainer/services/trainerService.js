@@ -33,7 +33,7 @@ export const trainerService = {
 
   /**
    * Marks appointment as in_progress. Requires proof photo and GPS.
-   * @param {Object} data - { start_proof_media_id, start_latitude, start_longitude }
+   * @param {Object} data - { start_proof_media, start_latitude, start_longitude }
    */
   async startAppointment(id, data) {
     const response = await api.patch(`/appointments/${id}/start`, data)
@@ -42,7 +42,7 @@ export const trainerService = {
 
   /**
    * Completes the appointment. Requires proof photo, GPS, student count.
-   * @param {Object} data - { end_proof_media_id, end_latitude, end_longitude, student_count, completion_notes? }
+   * @param {Object} data - { end_proof_media, end_latitude, end_longitude, student_count, completion_notes? }
    */
   async completeAppointment(id, data) {
     const response = await api.patch(`/appointments/${id}/complete`, data)
@@ -89,7 +89,6 @@ export const trainerService = {
   },
 
   // Media upload (unchanged)
-
   async checkin(latitude, longitude) {
     const response = await api.post('/trainer/checkin', { latitude, longitude })
     return response.data

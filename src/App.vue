@@ -95,7 +95,8 @@ import {
   AcademicCapIcon,
   Cog6ToothIcon,
   ChartBarIcon,
-  MapIcon
+  MapIcon,
+  FilmIcon
 } from '@heroicons/vue/24/outline'
 import {
   Circle
@@ -106,16 +107,20 @@ import MobileNav from '@/modules/shared/components/MobileNav.vue'
 import ToastContainer from '@/modules/shared/components/ToastContainer.vue'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useNotificationStore } from '@/modules/shared/store/notifications'
+import { useTrainerTracking } from '@/modules/shared/composables/useTrainerTracking'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const { resumeIfActive } = useTrainerTracking()
 
 watch(
   () => authStore.isAuthenticated,
   (authenticated) => {
     if (authenticated) {
       notificationStore.connectRealtime()
+      // Resume GPS tracking across all pages if a session was in progress
+      if (authStore.isTrainer) resumeIfActive()
     } else {
       notificationStore.disconnectRealtime()
     }
@@ -140,8 +145,7 @@ const salesNavGroups = [
     label: 'Main',
     items: [
       { to: '/sales', label: 'Dashboard', icon: HomeIcon },
-      { to: '/sales/trainers', label: 'Trainers', icon: MapIcon },
-      { to: '/sales/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
+{ to: '/sales/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
       { to: '/sales/calendar', label: 'Calendar', icon: CalendarDaysIcon },
       {
         label: 'Reports',
@@ -155,7 +159,7 @@ const salesNavGroups = [
         icon: Cog6ToothIcon,
         children: [
           { to: '/sales/configurations/telegram-bot', label: 'Telegram Bot', icon: Circle },
-          { to: '/sales/configurations/notifications', label: 'Notifications', icon: Circle },
+          { to: '/sales/configurations/business-types', label: 'Business Type', icon: Circle },
         ],
       },
     ],
@@ -164,6 +168,7 @@ const salesNavGroups = [
     label: 'Account',
     items: [
       { to: '/sales/profile', label: 'Profile', icon: UserIcon },
+      { to: '/sales/settings', label: 'Settings', icon: Cog6ToothIcon },
     ],
   },
 ]
@@ -175,6 +180,7 @@ const trainerNavGroups = [
       { to: '/trainer', label: 'Dashboard', icon: HomeIcon },
       { to: '/trainer/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
       { to: '/trainer/onboarding', label: 'Onboarding', icon: AcademicCapIcon },
+      { to: '/trainer/lessons', label: 'Lessons', icon: FilmIcon },
       { to: '/trainer/calendar', label: 'Calendar', icon: CalendarDaysIcon },
     ],
   },
@@ -182,6 +188,7 @@ const trainerNavGroups = [
     label: 'Account',
     items: [
       { to: '/trainer/profile', label: 'Profile', icon: UserIcon },
+      { to: '/trainer/settings', label: 'Settings', icon: Cog6ToothIcon },
     ],
   },
 ]
