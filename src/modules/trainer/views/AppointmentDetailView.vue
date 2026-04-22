@@ -7,7 +7,7 @@
           class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors shrink-0">
           <ChevronLeftIcon class="w-5 h-5" />
         </button>
-      <div class="min-w-0">
+        <div class="min-w-0">
           <h1 class="text-xl font-bold text-gray-900 truncate">{{ appt?.title || 'Appointment' }}</h1>
           <p class="text-sm text-gray-500 mt-0.5">{{ appt?.client?.company_name }}</p>
         </div>
@@ -118,11 +118,14 @@
                 <dt class="text-xs text-gray-500">Type</dt>
                 <dd class="font-medium text-gray-900 capitalize">{{ appt.appointment_type }}</dd>
               </div>
-              <dd class="font-medium text-gray-900 capitalize">
+              <div>
+                <dt class="text-xs text-gray-500">Location</dt>
+                <dd class="font-medium text-gray-900 capitalize">
                   <a :href="appt.client.link_address" class="text-primary hover:underline" target="_blank">
                     {{ appt.location_type }}
                   </a>
                 </dd>
+              </div>
               <div>
                 <dt class="text-xs text-gray-500">Date</dt>
                 <dd class="font-medium text-gray-900">{{ formatDate(appt.scheduled_date) }}</dd>
@@ -213,15 +216,19 @@
 
             <button
               v-if="['pending', 'leave_office'].includes(appt.status) && (appt.location_type === 'online' || appt.status === 'leave_office')"
-              @click="router.push(`/trainer/appointments/${appt.id}/complete?step=start`)"
+              @click="openActionModal('start')"
               class="w-full py-3 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors">
               Start Appointment
             </button>
 
-            <button v-if="appt.status === 'in_progress'"
-              @click="router.push(`/trainer/appointments/${appt.id}/complete`)"
+            <button v-if="appt.status === 'in_progress'" @click="openActionModal('complete')"
               class="w-full py-3 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors">
               Complete Appointment
+            </button>
+
+            <button v-if="['pending', 'leave_office'].includes(appt.status)" @click="openRescheduleModal"
+              class="w-full py-3 text-sm font-semibold text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+              Reschedule Appointment
             </button>
 
             <button v-if="['pending', 'leave_office', 'in_progress'].includes(appt.status)"
@@ -267,14 +274,19 @@
 
           <button
             v-if="['pending', 'leave_office'].includes(appt.status) && (appt.location_type === 'online' || appt.status === 'leave_office')"
-            @click="router.push(`/trainer/appointments/${appt.id}/complete?step=start`)"
+            @click="openActionModal('start')"
             class="w-full py-3 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors">
             Start Appointment
           </button>
 
-          <button v-if="appt.status === 'in_progress'" @click="router.push(`/trainer/appointments/${appt.id}/complete`)"
+          <button v-if="appt.status === 'in_progress'" @click="openActionModal('complete')"
             class="w-full py-3 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors">
             Complete Appointment
+          </button>
+
+          <button v-if="['pending', 'leave_office'].includes(appt.status)" @click="openRescheduleModal"
+            class="w-full py-3 text-sm font-semibold text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+            Reschedule Appointment
           </button>
 
           <button v-if="['pending', 'leave_office', 'in_progress'].includes(appt.status)"
@@ -289,6 +301,214 @@
     <div v-if="!loading && !appt" class="text-center py-12">
       <p class="text-sm text-gray-500">Appointment not found.</p>
     </div>
+
+    <!-- Action Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showActionModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          @click.self="closeActionModal">
+          <div class="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-semibold text-gray-900">{{ actionTitle }}</h3>
+                <p class="text-xs text-gray-500 mt-0.5">{{ appt?.title || 'Appointment' }}</p>
+              </div>
+              <button @click="closeActionModal"
+                class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <XMarkIcon class="w-5 h-5" />
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div
+                :class="['flex items-center gap-2 flex-1 py-2.5 px-4 rounded-lg text-sm font-medium text-center justify-center', isStartAction ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500']">
+                <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold"
+                  :class="isStartAction ? 'border-white' : 'border-gray-400'">1</span>
+                Start
+              </div>
+              <div class="w-8 h-px bg-gray-300"></div>
+              <div
+                :class="['flex items-center gap-2 flex-1 py-2.5 px-4 rounded-lg text-sm font-medium text-center justify-center', !isStartAction ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500']">
+                <span class="w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs font-bold"
+                  :class="!isStartAction ? 'border-white' : 'border-gray-400'">2</span>
+                Complete
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div class="px-5 pt-5 pb-3">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-sm font-semibold text-gray-900">Proof Photo</h2>
+                  <span v-if="proofMedia" class="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span>
+                    Captured
+                  </span>
+                </div>
+              </div>
+
+              <div v-if="cameraError" class="px-5 pb-5 space-y-3">
+                <div
+                  class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                  <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>Camera not available. Please upload a photo instead.</span>
+                </div>
+                <input type="file" accept="image/*" @change="onFileChange"
+                  class="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark" />
+              </div>
+
+              <template v-else-if="photoTaken && proofMedia">
+                <div class="relative">
+                  <img :src="proofMedia" alt="Proof photo" class="w-full max-h-72 object-cover" />
+                  <button type="button" @click="retakePhoto"
+                    class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 hover:bg-black/75 text-white text-xs font-medium rounded-lg transition-colors backdrop-blur-sm">
+                    <ArrowPathIcon class="w-3.5 h-3.5" />
+                    Retake
+                  </button>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="relative bg-black">
+                  <video ref="videoEl" autoplay playsinline muted class="w-full max-h-72 object-cover"
+                    :class="cameraReady ? 'opacity-100' : 'opacity-0'"></video>
+                  <div v-if="!cameraReady"
+                    class="absolute inset-0 flex flex-col items-center justify-center gap-2 min-h-48">
+                    <svg class="w-5 h-5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    <p class="text-white/70 text-xs">Starting camera…</p>
+                  </div>
+                  <button v-if="cameraReady" type="button" @click="capturePhoto"
+                    class="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+                    <CameraIcon class="w-7 h-7 text-gray-800" />
+                  </button>
+                </div>
+                <canvas ref="canvasEl" class="hidden"></canvas>
+              </template>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+              <h2 class="text-sm font-semibold text-gray-900 mb-3">GPS Location</h2>
+              <div v-if="gettingLocation" class="flex items-center gap-2 text-sm text-gray-500">
+                <svg class="w-4 h-4 animate-spin text-primary shrink-0" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Detecting your location…
+              </div>
+              <div v-else-if="actionForm.latitude && actionForm.longitude" class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <CheckCircleIcon class="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span class="text-sm font-medium text-gray-900">Location detected</span>
+                </div>
+                <p class="text-xs text-gray-400 pl-6 font-mono">{{ actionForm.latitude.toFixed(6) }}, {{
+                  actionForm.longitude.toFixed(6) }}</p>
+                <button type="button" @click="getLocation" class="pl-6 text-xs text-primary hover:underline">
+                  Refresh
+                </button>
+              </div>
+              <div v-else-if="locationError" class="space-y-2">
+                <div class="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                  <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{{ locationError }}</span>
+                </div>
+                <button type="button" @click="getLocation" class="text-xs text-primary hover:underline">
+                  Retry location
+                </button>
+              </div>
+            </div>
+
+            <template v-if="!isStartAction">
+              <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+                <h2 class="text-sm font-semibold text-gray-900">Session Summary</h2>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1.5">Number of Students *</label>
+                  <input v-model.number="actionForm.student_count" type="number" min="0" required
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1.5">Completion Notes</label>
+                  <textarea v-model="actionForm.completion_notes" rows="3" placeholder="Summary of what was covered…"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
+                </div>
+              </div>
+            </template>
+
+            <div v-if="actionSubmitError"
+              class="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {{ actionSubmitError }}
+            </div>
+
+            <div class="flex gap-3 justify-end">
+              <button @click="closeActionModal" type="button"
+                class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button @click="submitAction" type="button"
+                :disabled="actionSubmitting || !proofMedia || !actionForm.latitude || !actionForm.longitude || gettingLocation"
+                class="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
+                <span v-if="actionSubmitting">{{ isStartAction ? 'Starting…' : 'Completing…' }}</span>
+                <span v-else-if="!proofMedia">Take a photo first</span>
+                <span v-else-if="gettingLocation">Getting your location…</span>
+                <span v-else-if="!actionForm.latitude || !actionForm.longitude">Location required</span>
+                <span v-else>{{ isStartAction ? 'Start Appointment' : 'Complete Appointment' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Reschedule Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showRescheduleModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          @click.self="closeRescheduleModal">
+          <div class="bg-white rounded-lg shadow-md max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900">Reschedule Appointment</h3>
+            <p class="text-sm text-gray-600">Update the new schedule for this appointment.</p>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">New Date *</label>
+                <input v-model="rescheduleForm.scheduled_date" type="date"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1.5">Start Time *</label>
+                  <input v-model="rescheduleForm.scheduled_start_time" type="time"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700 mb-1.5">End Time *</label>
+                  <input v-model="rescheduleForm.scheduled_end_time" type="time"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason</label>
+                <textarea v-model="rescheduleForm.reschedule_reason" rows="3" placeholder="Why are you rescheduling?"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
+              </div>
+            </div>
+
+            <div v-if="rescheduleError" class="text-sm text-red-600">{{ rescheduleError }}</div>
+
+            <div class="flex gap-3 justify-end">
+              <button @click="closeRescheduleModal"
+                class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button @click="handleReschedule"
+                :disabled="rescheduling || !rescheduleForm.scheduled_date || !rescheduleForm.scheduled_start_time || !rescheduleForm.scheduled_end_time"
+                class="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
+                {{ rescheduling ? 'Rescheduling...' : 'Confirm Reschedule' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Cancel Modal -->
     <Teleport to="body">
@@ -365,7 +585,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeftIcon, ArrowsPointingOutIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ChevronLeftIcon, ArrowsPointingOutIcon, XMarkIcon, ExclamationTriangleIcon, CheckCircleIcon, CameraIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
 import { trainerService } from '@/modules/trainer/services/trainerService.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
 import { getCurrentLocation } from '@/modules/shared/composables/useGeolocation.js'
@@ -386,12 +606,45 @@ const appt = ref(null)
 const travelEstimates = ref(null)
 const loading = ref(true)
 const actionLoading = ref(false)
+const showActionModal = ref(false)
+const actionMode = ref('start')
+const actionSubmitting = ref(false)
+const actionSubmitError = ref(null)
+const showRescheduleModal = ref(false)
+const rescheduling = ref(false)
+const rescheduleError = ref(null)
 
 const mapContainer = ref(null)
 const fullscreenMapContainer = ref(null)
 const routeMap = useMap()
 const routeMapFullscreen = useMap()
 const isMapFullscreen = ref(false)
+const videoEl = ref(null)
+const canvasEl = ref(null)
+const cameraReady = ref(false)
+const cameraError = ref(false)
+const photoTaken = ref(false)
+const proofMedia = ref(null)
+const gettingLocation = ref(false)
+const locationError = ref(null)
+let mediaStream = null
+
+const actionForm = reactive({
+  latitude: null,
+  longitude: null,
+  student_count: 0,
+  completion_notes: ''
+})
+
+const rescheduleForm = reactive({
+  scheduled_date: '',
+  scheduled_start_time: '',
+  scheduled_end_time: '',
+  reschedule_reason: ''
+})
+
+const isStartAction = computed(() => actionMode.value === 'start')
+const actionTitle = computed(() => isStartAction.value ? 'Start Appointment' : 'Complete Appointment')
 
 // Cancel
 const showCancelModal = ref(false)
@@ -414,6 +667,129 @@ const trainerStatusDot = computed(() => {
   return 'bg-gray-400'
 })
 
+function resetActionForm() {
+  actionForm.latitude = null
+  actionForm.longitude = null
+  actionForm.student_count = 0
+  actionForm.completion_notes = ''
+  actionSubmitError.value = null
+  cameraReady.value = false
+  cameraError.value = false
+  photoTaken.value = false
+  proofMedia.value = null
+  locationError.value = null
+}
+
+async function startCamera() {
+  cameraReady.value = false
+  cameraError.value = false
+  if (!navigator.mediaDevices?.getUserMedia) {
+    cameraError.value = true
+    return
+  }
+
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    })
+
+    if (!videoEl.value) return
+    videoEl.value.srcObject = mediaStream
+    videoEl.value.onloadedmetadata = () => { cameraReady.value = true }
+  } catch {
+    cameraError.value = true
+  }
+}
+
+function stopCamera() {
+  mediaStream?.getTracks().forEach(track => track.stop())
+  mediaStream = null
+}
+
+function capturePhoto() {
+  const video = videoEl.value
+  const canvas = canvasEl.value
+  if (!video || !canvas) return
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  canvas.getContext('2d').drawImage(video, 0, 0)
+  proofMedia.value = canvas.toDataURL('image/jpeg', 0.85)
+  photoTaken.value = true
+  stopCamera()
+}
+
+function retakePhoto() {
+  proofMedia.value = null
+  photoTaken.value = false
+  startCamera()
+}
+
+function onFileChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    proofMedia.value = reader.result
+    photoTaken.value = true
+  }
+  reader.readAsDataURL(file)
+}
+
+async function getLocation() {
+  gettingLocation.value = true
+  locationError.value = null
+  try {
+    const { latitude, longitude } = await getCurrentLocation()
+    actionForm.latitude = latitude
+    actionForm.longitude = longitude
+  } catch (err) {
+    locationError.value = err.message || 'Could not get location. Please enable location access and try again.'
+  } finally {
+    gettingLocation.value = false
+  }
+}
+
+function openActionModal(mode) {
+  actionMode.value = mode
+  resetActionForm()
+  showActionModal.value = true
+}
+
+function closeActionModal() {
+  showActionModal.value = false
+  stopCamera()
+  resetActionForm()
+}
+
+function normalizeDateForInput(value) {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const isoDate = value.match(/^\d{4}-\d{2}-\d{2}/)
+    if (isoDate) return isoDate[0]
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return parsed.toISOString().slice(0, 10)
+}
+
+function openRescheduleModal() {
+  const current = appt.value
+  rescheduleError.value = null
+  if (current) {
+    rescheduleForm.scheduled_date = normalizeDateForInput(current.scheduled_date)
+    rescheduleForm.scheduled_start_time = current.scheduled_start_time || ''
+    rescheduleForm.scheduled_end_time = current.scheduled_end_time || ''
+    rescheduleForm.reschedule_reason = current.reschedule_reason || ''
+  }
+  showRescheduleModal.value = true
+}
+
+function closeRescheduleModal() {
+  showRescheduleModal.value = false
+  rescheduleError.value = null
+}
+
 async function load() {
   loading.value = true
   try {
@@ -425,6 +801,53 @@ async function load() {
     travelEstimates.value = null
   } finally {
     loading.value = false
+  }
+}
+
+async function submitAction() {
+  actionSubmitError.value = null
+  actionSubmitting.value = true
+
+  try {
+    if (isStartAction.value) {
+      await trainerService.startAppointment(appt.value.id, {
+        start_proof_media: proofMedia.value,
+        start_latitude: actionForm.latitude,
+        start_longitude: actionForm.longitude,
+      })
+      toast.success('Appointment started!')
+    } else {
+      await trainerService.completeAppointment(appt.value.id, {
+        end_proof_media: proofMedia.value,
+        end_latitude: actionForm.latitude,
+        end_longitude: actionForm.longitude,
+        student_count: actionForm.student_count,
+        completion_notes: actionForm.completion_notes || null,
+      })
+      toast.success('Appointment completed!')
+    }
+
+    closeActionModal()
+    await load()
+  } catch (err) {
+    actionSubmitError.value = extractErrorMessage(err)
+  } finally {
+    actionSubmitting.value = false
+  }
+}
+
+async function handleReschedule() {
+  rescheduleError.value = null
+  rescheduling.value = true
+  try {
+    await trainerService.rescheduleAppointment(appt.value.id, rescheduleForm)
+    toast.success('Appointment rescheduled.')
+    closeRescheduleModal()
+    await load()
+  } catch (err) {
+    rescheduleError.value = extractErrorMessage(err)
+  } finally {
+    rescheduling.value = false
   }
 }
 
@@ -578,11 +1001,23 @@ watch(isMapFullscreen, async (fullscreen) => {
   }
 }, { flush: 'post' })
 
+watch(showActionModal, async (open) => {
+  if (!open) {
+    stopCamera()
+    return
+  }
+
+  await nextTick()
+  startCamera()
+  getLocation()
+})
+
 onMounted(async () => {
   await load()
 })
 
 onBeforeUnmount(() => {
+  stopCamera()
   routeMap.destroy()
   routeMapFullscreen.destroy()
 })

@@ -168,6 +168,7 @@ watch(() => eventStore.filteredEvents, (events) => {
   })
 })
 
+
 onMounted(() => {
   nextTick(() => {
     const api = calendarRef.value?.getApi()

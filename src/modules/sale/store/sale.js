@@ -18,6 +18,7 @@ export const useSaleStore = defineStore('sale', () => {
   // Local filters (applied on top of server-side pagination)
   const statusFilter = ref('')
   const typeFilter = ref('')
+  const trainerFilter = ref('')
 
   const filteredAppointments = computed(() => {
     let result = [...appointments.value]
@@ -121,6 +122,7 @@ export const useSaleStore = defineStore('sale', () => {
     error,
     statusFilter,
     typeFilter,
+    trainerFilter,
     filteredAppointments,
     fetchAppointments,
     createAppointment,

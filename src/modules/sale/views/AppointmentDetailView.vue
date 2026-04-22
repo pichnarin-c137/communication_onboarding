@@ -432,11 +432,13 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Start Time *</label>
-            <AppTimePicker v-model="rescheduleForm.scheduled_start_time" placeholder="Start time…" />
+            <input v-model="rescheduleForm.scheduled_start_time" type="time"
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">End Time *</label>
-            <AppTimePicker v-model="rescheduleForm.scheduled_end_time" placeholder="End time…" />
+            <input v-model="rescheduleForm.scheduled_end_time" type="time"
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
           </div>
         </div>
         <div>
@@ -468,7 +470,6 @@ import { extractErrorMessage } from '@core/services/error.handler'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
-import AppTimePicker from '@/modules/shared/components/AppTimePicker.vue'
 import AppointmentJourney from '@/modules/shared/components/AppointmentJourney.vue'
 import { useMap } from '@/modules/shared/composables/useMap.js'
 

@@ -17,7 +17,7 @@
               @click="$emit('cancel')"
               class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {{ cancelText }}
             </button>
             <button
               @click="$emit('confirm')"
@@ -44,6 +44,7 @@ const props = defineProps({
   title: { type: String, default: 'Confirm Action' },
   message: { type: String, default: 'Are you sure?' },
   confirmText: { type: String, default: 'Confirm' },
+  cancelText: { type: String, default: 'Cancel' },
   type: { type: String, default: 'warning' }
 })
 

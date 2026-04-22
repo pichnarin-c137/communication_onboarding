@@ -13,6 +13,11 @@ export const onboardingService = {
     return response.data
   },
 
+  async getOnboardingSales(id) {
+    const response = await api.get(`/onboarding/${id}/sales`)
+    return response.data
+  },
+
   async refreshProgress(id) {
     const response = await api.post(`/onboarding/${id}/refresh-progress`)
     return response.data
@@ -75,10 +80,10 @@ export const onboardingService = {
     return response.data
   },
 
-    async checkPolicy(onboardingId, policyId) {
-      const response = await api.patch(`/onboarding/${onboardingId}/policies/${policyId}/check`)
-      return response.data
-    },
+  async checkPolicy(onboardingId, policyId) {
+    const response = await api.patch(`/onboarding/${onboardingId}/policies/${policyId}/check`)
+    return response.data
+  },
 
   async uncheckPolicy(onboardingId, policyId) {
     const response = await api.patch(`/onboarding/${onboardingId}/policies/${policyId}/uncheck`)

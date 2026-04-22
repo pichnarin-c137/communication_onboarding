@@ -4,8 +4,7 @@
       <div v-if="eventStore.isDetailsModalOpen"
         class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop"
         @click.self="close">
-        <div
-          class="bg-white w-full sm:rounded-lg sm:shadow-md sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-lg">
+        <div class="bg-white w-full sm:rounded-lg sm:shadow-md sm:max-w-lg max-h-[95vh] overflow-y-auto rounded-t-lg">
 
           <!-- Status colour bar -->
           <div class="h-1.5 rounded-t-lg transition-colors" :style="{ backgroundColor: statusBarColor }"></div>
@@ -95,7 +94,7 @@
                   <div v-if="canEdit || canReschedule || canCancel" class="grid grid-cols-3 gap-2 mt-2">
                     <button v-if="canEdit" @click="initEdit()"
                       class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Edit</button>
-                    <button v-if="canReschedule" @click="mode = 'reschedule'"
+                    <button v-if="canReschedule" @click="openReschedulePanel"
                       class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Reschedule</button>
                     <button v-if="canCancel" @click="mode = 'cancel'"
                       class="py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">Cancel</button>
@@ -138,8 +137,7 @@
 
               <!--  START sub-panel  -->
               <ActionPanel v-if="mode === 'start'" title="Start Appointment" @back="mode = 'view'">
-                <ProofUpload label="Start proof photo *" v-model:media-id="action.proofMedia"
-                  :service="trainerService" />
+                <ProofCapture label="Start proof photo *" v-model:media-id="action.proofMedia" />
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" class="mt-3" />
                 <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
                 <div class="flex gap-2 mt-4">
@@ -154,7 +152,7 @@
 
               <!--  COMPLETE sub-panel  -->
               <ActionPanel v-if="mode === 'complete'" title="Complete Appointment" @back="mode = 'view'">
-                <ProofUpload label="End proof photo *" v-model:media-id="action.proofMedia" :service="trainerService" />
+                <ProofCapture label="End proof photo *" v-model:media-id="action.proofMedia" />
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" class="mt-3" />
                 <div class="mt-3">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Number of students *</label>
@@ -260,7 +258,7 @@
                   class="grid grid-cols-3 gap-2 pt-1">
                   <button v-if="canEdit" @click="initEdit()"
                     class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Edit</button>
-                  <button v-if="canReschedule" @click="mode = 'reschedule'"
+                  <button v-if="canReschedule" @click="openReschedulePanel"
                     class="py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Reschedule</button>
                   <button v-if="canCancel" @click="mode = 'cancel'"
                     class="py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">Cancel</button>
@@ -299,12 +297,12 @@
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">Start *</label>
                     <input v-model="action.startTime" type="time"
-                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">End *</label>
                     <input v-model="action.endTime" type="time"
-                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                 </div>
                 <div>
@@ -345,12 +343,12 @@
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">Start time</label>
                     <input v-model="editForm.scheduled_start_time" type="time"
-                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1.5">End time</label>
                     <input v-model="editForm.scheduled_end_time" type="time"
-                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
+                      class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                 </div>
                 <div v-if="editForm.location_type !== 'physical'">
@@ -394,7 +392,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, h } from 'vue'
+import { ref, reactive, computed, watch, h, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   XMarkIcon,
@@ -405,6 +403,10 @@ import {
   BuildingOfficeIcon,
   UserIcon,
   ClipboardDocumentIcon,
+  CameraIcon,
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useEventStore } from '@/modules/shared/store/events.js'
@@ -445,7 +447,7 @@ const TimelineStep = (props) =>
   ])
 TimelineStep.props = ['label', 'timestamp', 'done', 'active']
 
-// GPS capture
+// GPS capture (manual trigger to avoid slow auto-detect)
 const GpsCapture = {
   props: { lat: Number, lng: Number },
   emits: ['update:lat', 'update:lng'],
@@ -460,21 +462,15 @@ const GpsCapture = {
     }
     function onFinalError() {
       getting.value = false
-      err.value = 'Auto-detect failed. Please enter coordinates manually.'
+      err.value = 'Could not detect location. You can enter coordinates manually.'
     }
     function get() {
       if (!navigator.geolocation) { err.value = 'Geolocation not supported'; return }
       getting.value = true; err.value = null
       navigator.geolocation.getCurrentPosition(
         onSuccess,
-        () => {
-          navigator.geolocation.getCurrentPosition(
-            onSuccess,
-            onFinalError,
-            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-          )
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        onFinalError,
+        { enableHighAccuracy: false, timeout: 7000, maximumAge: 60000 }
       )
     }
     return () => h('div', [
@@ -483,7 +479,7 @@ const GpsCapture = {
         h('button', {
           type: 'button', onClick: get, disabled: getting.value,
           class: 'text-xs text-primary hover:underline disabled:opacity-50'
-        }, getting.value ? 'Getting...' : 'Auto-detect')
+        }, getting.value ? 'Detecting...' : 'Detect location')
       ]),
       h('div', { class: 'grid grid-cols-2 gap-2' }, [
         h('input', { value: props.lat, onInput: (e) => emit('update:lat', +e.target.value), type: 'number', step: 'any', placeholder: 'Latitude', class: 'px-2.5 py-2 border border-gray-300 rounded-lg text-xs' }),
@@ -491,46 +487,150 @@ const GpsCapture = {
       ]),
       err.value
         ? h('p', { class: 'text-xs text-amber-600 mt-1' }, err.value)
-        : (props.lat && props.lng ? h('p', { class: 'text-xs text-emerald-600 mt-1' }, 'Location captured') : null)
+        : (props.lat && props.lng ? h('p', { class: 'text-xs text-emerald-600 mt-1 flex items-center gap-1.5' }, [
+          h(CheckCircleIcon, { class: 'w-3.5 h-3.5' }),
+          'Location captured'
+        ]) : null)
     ])
   }
 }
 
-// Proof photo upload
-const ProofUpload = {
-  props: { label: String, mediaId: String, service: Object },
+// Proof photo capture (camera-first, file fallback)
+const ProofCapture = {
+  props: { label: String, mediaId: String },
   emits: ['update:mediaId'],
   setup(props, { emit }) {
-    const uploading = ref(false)
-    const err = ref(null)
-    const done = ref(false)
+    const cameraReady = ref(false)
+    const cameraError = ref(false)
+    const photoTaken = ref(!!props.mediaId)
+    const error = ref(null)
+    const videoEl = ref(null)
+    const canvasEl = ref(null)
+    let mediaStream = null
+
+    async function startCamera() {
+      cameraReady.value = false
+      cameraError.value = false
+      if (!navigator.mediaDevices?.getUserMedia) {
+        cameraError.value = true
+        return
+      }
+
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        })
+
+        if (!videoEl.value) return
+        videoEl.value.srcObject = mediaStream
+        videoEl.value.onloadedmetadata = () => { cameraReady.value = true }
+      } catch {
+        cameraError.value = true
+      }
+    }
+
+    function stopCamera() {
+      mediaStream?.getTracks().forEach(track => track.stop())
+      mediaStream = null
+    }
+
+    function capturePhoto() {
+      const video = videoEl.value
+      const canvas = canvasEl.value
+      if (!video || !canvas) return
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      canvas.getContext('2d').drawImage(video, 0, 0)
+      emit('update:mediaId', canvas.toDataURL('image/jpeg', 0.85))
+      photoTaken.value = true
+      error.value = null
+      stopCamera()
+    }
+
+    function retakePhoto() {
+      emit('update:mediaId', null)
+      photoTaken.value = false
+      startCamera()
+    }
+
     async function onChange(e) {
-      const file = e.target.files[0]
+      const file = e.target.files?.[0]
       if (!file) return
-      uploading.value = true; err.value = null; done.value = false
       try {
         const base64 = await fileToDataUrl(file)
         emit('update:mediaId', base64)
-        done.value = true
+        photoTaken.value = true
+        error.value = null
+        stopCamera()
       } catch (ex) {
-        err.value = ex.message || 'Upload failed'
-      } finally {
-        uploading.value = false
+        error.value = ex.message || 'Failed to read selected image'
       }
     }
-    return () => h('div', [
-      h('label', { class: 'block text-xs font-medium text-gray-700 mb-1.5' }, props.label),
-      h('input', {
-        type: 'file', accept: 'image/*', onChange,
-        class: 'block w-full text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark'
-      }),
-      uploading.value
-        ? h('p', { class: 'text-xs text-gray-400 mt-1' }, 'Preparing image...')
-        : done.value
-          ? h('p', { class: 'text-xs text-emerald-600 mt-1' }, 'Photo ready')
-          : err.value
-            ? h('p', { class: 'text-xs text-red-500 mt-1' }, err.value)
+
+    onMounted(() => {
+      if (props.mediaId) return
+      requestAnimationFrame(() => {
+        startCamera()
+      })
+    })
+
+    onBeforeUnmount(() => {
+      stopCamera()
+    })
+
+    return () => h('div', { class: 'bg-white rounded-xl border border-gray-200 overflow-hidden' }, [
+      h('div', { class: 'px-4 pt-4 pb-2' }, [
+        h('div', { class: 'flex items-center justify-between' }, [
+          h('label', { class: 'block text-xs font-medium text-gray-700' }, props.label),
+          props.mediaId
+            ? h('span', { class: 'inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium' }, [
+              h('span', { class: 'w-2 h-2 rounded-full bg-emerald-500' }),
+              'Captured'
+            ])
             : null
+        ])
+      ]),
+
+      cameraError.value
+        ? h('div', { class: 'px-4 pb-4 space-y-2' }, [
+          h('div', { class: 'flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700' }, [
+            h(ExclamationTriangleIcon, { class: 'w-4 h-4 shrink-0 mt-0.5' }),
+            h('span', 'Camera unavailable. Use file upload instead.')
+          ]),
+          h('input', {
+            type: 'file', accept: 'image/*', onChange,
+            class: 'block w-full text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark'
+          })
+        ])
+        : photoTaken.value && props.mediaId
+          ? h('div', { class: 'relative' }, [
+            h('img', { src: props.mediaId, alt: 'Proof photo', class: 'w-full max-h-56 object-cover' }),
+            h('button', {
+              type: 'button', onClick: retakePhoto,
+              class: 'absolute bottom-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 bg-black/60 hover:bg-black/75 text-white text-[11px] rounded-lg transition-colors'
+            }, [h(ArrowPathIcon, { class: 'w-3.5 h-3.5' }), 'Retake'])
+          ])
+          : h('div', { class: 'relative bg-black' }, [
+            h('video', {
+              ref: videoEl,
+              autoplay: true,
+              playsinline: true,
+              muted: true,
+              class: ['w-full max-h-56 object-cover', cameraReady.value ? 'opacity-100' : 'opacity-0']
+            }),
+            !cameraReady.value
+              ? h('div', { class: 'absolute inset-0 flex items-center justify-center text-white/70 text-xs' }, 'Starting camera...')
+              : null,
+            cameraReady.value
+              ? h('button', {
+                type: 'button', onClick: capturePhoto,
+                class: 'absolute bottom-3 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white shadow flex items-center justify-center hover:scale-105 transition-transform'
+              }, [h(CameraIcon, { class: 'w-6 h-6 text-gray-800' })])
+              : null,
+            h('canvas', { ref: canvasEl, class: 'hidden' })
+          ]),
+
+      error.value ? h('p', { class: 'px-4 pb-3 text-xs text-red-600' }, error.value) : null
     ])
   }
 }
@@ -570,6 +670,8 @@ const editForm = reactive({
   title: '', location_type: '', scheduled_start_time: '', scheduled_end_time: '',
   meeting_link: '', physical_location: '', notes: ''
 })
+const editOriginal = ref({
+})
 
 const newStudents = ref([{ name: '', phone_number: '', profession: '' }])
 
@@ -590,7 +692,7 @@ const canStart = computed(() =>
 )
 const canComplete = computed(() => appt.value?.status === 'in_progress')
 const canEdit = computed(() => appt.value?.status === 'pending')
-const canReschedule = canEdit
+const canReschedule = computed(() => ['pending', 'leave_office'].includes(appt.value?.status))
 const canCancel = computed(() => {
   if (!['pending', 'leave_office', 'in_progress'].includes(appt.value?.status)) return false
   if (authStore.isTrainer && appt.value?.creator_id !== authStore.userId) return false
@@ -675,9 +777,30 @@ watch(() => eventStore.isDetailsModalOpen, async (open) => {
 })
 
 // Reset action state when switching modes
-watch(mode, () => {
+watch(mode, (nextMode) => {
   actionError.value = null
-  Object.assign(action, { lat: null, lng: null, proofMedia: null, studentCount: 0, notes: '', reason: '', date: '', startTime: '', endTime: '' })
+
+  const rescheduleDefaults = nextMode === 'reschedule'
+    ? {
+      date: normalizeDateForInput(appt.value?.reschedule_to_date || appt.value?.scheduled_date),
+      startTime: normalizeTimeForInput(appt.value?.reschedule_to_start_time || appt.value?.scheduled_start_time),
+      endTime: normalizeTimeForInput(appt.value?.reschedule_to_end_time || appt.value?.scheduled_end_time),
+      reason: appt.value?.reschedule_reason || ''
+    }
+    : { date: '', startTime: '', endTime: '', reason: '' }
+
+  Object.assign(action, {
+    lat: null,
+    lng: null,
+    proofMedia: null,
+    studentCount: 0,
+    notes: '',
+    reason: rescheduleDefaults.reason,
+    date: rescheduleDefaults.date,
+    startTime: rescheduleDefaults.startTime,
+    endTime: rescheduleDefaults.endTime
+  })
+
   newStudents.value = [{ name: '', phone_number: '', profession: '' }]
 })
 
@@ -691,7 +814,36 @@ function initEdit() {
     physical_location: appt.value.physical_location || '',
     notes: appt.value.notes || ''
   })
+  editOriginal.value = { ...editForm }
   mode.value = 'edit'
+}
+
+function normalizeDateForInput(value) {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const isoDate = value.match(/^\d{4}-\d{2}-\d{2}/)
+    if (isoDate) return isoDate[0]
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return parsed.toISOString().slice(0, 10)
+}
+
+function normalizeTimeForInput(value) {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const hhmm = value.match(/^\d{2}:\d{2}/)
+    if (hhmm) return hhmm[0]
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return parsed.toTimeString().slice(0, 5)
+}
+
+function openReschedulePanel() {
+  mode.value = 'reschedule'
 }
 
 // Actions
@@ -779,9 +931,16 @@ async function doReschedule() {
 }
 
 async function doEdit() {
+  const EDIT_FIELDS = ['title', 'location_type', 'scheduled_start_time', 'scheduled_end_time', 'meeting_link', 'physical_location', 'notes']
+  const hasChanges = EDIT_FIELDS.some(k => editForm[k] !== editOriginal.value[k])
+  if (!hasChanges) {
+    toast.info('No changes to save.')
+    return
+  }
   actionLoading.value = true; actionError.value = null
   try {
     await saleService.updateAppointment(appt.value.id, editForm)
+    editOriginal.value = { ...editForm }
     toast.success('Appointment updated.')
     await reloadAndRefresh()
   } catch (e) {

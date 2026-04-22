@@ -25,6 +25,20 @@
       </div>
 
       <div class="flex items-center gap-2 sm:ml-auto flex-wrap">
+        <!-- Trainer filter (sale role only) -->
+        <div v-if="authStore.isSales" class="w-48">
+          <AppSelect
+            v-model="trainerFilter"
+            :options="trainerOptions"
+            placeholder="All Trainers"
+            search-placeholder="Search trainers..."
+            :loading="saleStore.loadingTrainers"
+            :remote="true"
+            clearable
+            @search="onTrainerSearch"
+          />
+        </div>
+
         <!-- View buttons -->
         <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden">
           <button
@@ -56,10 +70,14 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from '@heroicons/vue/24/outline'
 import { useCalendarStore } from '@/modules/shared/store/calendar.js'
 import { useEventStore } from '@/modules/shared/store/events.js'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useSaleStore } from '@/modules/sale/store/sale.js'
+import AppSelect from '@/modules/shared/components/AppSelect.vue'
 
 const props = defineProps({
   calendarApi: { type: Object, default: null }
@@ -67,6 +85,28 @@ const props = defineProps({
 
 const calendarStore = useCalendarStore()
 const eventStore = useEventStore()
+const authStore = useAuthStore()
+const saleStore = useSaleStore()
+
+const trainerFilter = ref(null)
+
+const trainerOptions = computed(() =>
+  saleStore.trainers.map(t => ({ value: String(t.id), label: `${t.first_name} ${t.last_name}` }))
+)
+
+watch(trainerFilter, async (val) => {
+  calendarStore.setTrainerFilter(val ? Number(val) : null)
+  const params = val ? { trainer_id: val } : {}
+  await Promise.all([eventStore.loadEvents(params), eventStore.loadSidebar(params)])
+})
+
+async function onTrainerSearch(query) {
+  await saleStore.fetchTrainers(query)
+}
+
+onMounted(async () => {
+  if (authStore.isSales) await saleStore.fetchTrainers()
+})
 
 const title = ref('')
 

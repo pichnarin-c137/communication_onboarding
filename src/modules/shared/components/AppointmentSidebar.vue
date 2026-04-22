@@ -10,7 +10,7 @@
       <button
         v-for="f in filters"
         :key="f.key"
-        @click="activeFilter = f.key; loadData()"
+        @click="activeFilter = f.key"
         :class="[
           'px-2.5 py-1 text-xs font-medium rounded-full transition-colors',
           activeFilter === f.key
@@ -90,10 +90,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { CalendarDaysIcon } from '@heroicons/vue/24/outline'
 import { useEventStore } from '@/modules/shared/store/events.js'
+import { useCalendarStore } from '@/modules/shared/store/calendar.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 
 const eventStore = useEventStore()
+const calendarStore = useCalendarStore()
 const { formatDateShort, formatTime } = useDateTime()
 
 const filters = [
@@ -130,7 +132,8 @@ function statusColor(status) {
 }
 
 async function loadData() {
-  await eventStore.loadSidebar()
+  const params = calendarStore.selectedTrainerId ? { trainer_id: calendarStore.selectedTrainerId } : {}
+  await eventStore.loadSidebar(params)
 }
 
 onMounted(loadData)

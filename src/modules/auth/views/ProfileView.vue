@@ -385,6 +385,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import api from '@core/services/api'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useToast } from '@/modules/shared/composables/useToast.js'
 
 const ENDPOINTS = {
   PROFILE: import.meta.env.VITE_USER_PROFILE,
@@ -395,6 +396,7 @@ const ENDPOINTS = {
 
 const route = useRoute()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const profileForm = ref({
   first_name: authStore.user?.first_name ?? '',
@@ -407,6 +409,7 @@ const avatarPreview = ref(null)
 const profileSaving = ref(false)
 const profileSaveError = ref(null)
 const profileSaveSuccess = ref(false)
+const profileOriginal = ref({ first_name: '', last_name: '', phone_number: '', bio: '' })
 
 const initials = computed(() => {
   const f = profileForm.value.first_name?.charAt(0) ?? ''
@@ -426,6 +429,12 @@ function handleAvatarChange(e) {
 }
 
 async function saveProfile() {
+  const fields = ['first_name', 'last_name', 'phone_number', 'bio']
+  const hasChanges = !!avatarFile.value || fields.some(k => profileForm.value[k] !== profileOriginal.value[k])
+  if (!hasChanges) {
+    toast.info('No changes to save.')
+    return
+  }
   profileSaving.value = true
   profileSaveError.value = null
   profileSaveSuccess.value = false
@@ -440,6 +449,8 @@ async function saveProfile() {
     }
     await api.put(ENDPOINTS.PROFILE, payload)
     await authStore.fetchProfile()
+    profileOriginal.value = { ...profileForm.value }
+    avatarFile.value = null
     profileSaveSuccess.value = true
     setTimeout(() => { profileSaveSuccess.value = false }, 4000)
   } catch (err) {
@@ -563,6 +574,8 @@ onMounted(() => {
     profileForm.value.first_name = authStore.user.first_name ?? ''
     profileForm.value.last_name = authStore.user.last_name ?? ''
     profileForm.value.phone_number = authStore.user.phone_number ?? ''
+    profileForm.value.bio = authStore.user.bio ?? ''
+    profileOriginal.value = { ...profileForm.value }
   }
   fetchGoogleStatus()
   handleGoogleCallback()

@@ -7,7 +7,7 @@
         <ChevronLeftIcon class="w-5 h-5" />
       </button>
       <div>
-        <h1 class="text-lg font-semibold text-gray-900">Onboarding Detail</h1>
+        <h1 class="text-xl font-bold text-gray-900">Onboarding Detail</h1>
         <p class="text-xs text-gray-400 font-mono mt-0.5">{{ ob?.request_code || '—' }}</p>
       </div>
     </div>
@@ -72,74 +72,109 @@
 
             <div class="flex-1 min-w-0">
               <h2 class="text-sm font-bold text-gray-900">
-                {{ [ob.client?.company_name, ob.client?.phone].filter(Boolean).join(' | ') || ob.request_code }}
+                {{ [ob.client?.company_name, ob.appointment?.appointment_code, ob.client?.phone_number].filter(Boolean).join(' | ') }}
               </h2>
 
-              <!-- Two-row meta grid (4 cols each row), matching reference layout -->
-              <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2">
-                <!-- Row 1 -->
-                <div class="flex items-center gap-1.5">
-                  <UsersIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <span class="text-xs text-gray-700 truncate">
-                    {{ ob.client?.contact_name || ob.client?.name || '—' }}
-                    <template v-if="ob.client?.id"> | {{ ob.client.id }}</template>
-                  </span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <UserIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <span class="text-xs text-gray-700 truncate">{{ ob.sale?.name || '—' }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-3.5 h-3.5 shrink-0 flex items-center justify-center">
-                    <span class="w-2.5 h-2.5 rounded-full border-2"
-                      :class="accStatusActive ? 'border-primary bg-primary/20' : 'border-gray-300'"></span>
+              <div class="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="rounded-lg border border-gray-100 bg-gray-50/40 p-3 space-y-2">
+                  <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Appointment Detail</p>
+
+                  <div class="flex items-center gap-1.5">
+                    <div class="w-3.5 h-3.5 shrink-0 flex items-center justify-center">
+                      <span class="w-2.5 h-2.5 rounded-full border-2"
+                        :class="accStatusActive ? 'border-primary bg-primary/20' : 'border-gray-300'"></span>
+                    </div>
+                    <span class="text-xs text-gray-500 shrink-0">Account Status:</span>
+                    <span class="text-xs font-medium ml-0.5"
+                      :class="accStatusActive ? 'text-emerald-600' : 'text-gray-600'">
+                      {{ accStatusActive ? 'Active' : 'Inactive' }}
+                    </span>
                   </div>
-                  <span class="text-xs text-gray-500 shrink-0">Acc Status:</span>
-                  <span class="text-xs font-medium ml-0.5"
-                    :class="accStatusActive ? 'text-emerald-600' : 'text-gray-600'">
-                    {{ ob.account_status ? capitalize(ob.account_status) : '—' }}
-                  </span>
+
+                  <div class="flex items-center gap-1.5">
+                    <DocumentTextIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Appointment Code:</span>
+                    <span class="text-xs text-gray-700 truncate">
+                      {{ ob.appointment?.appointment_code }}
+                    </span>
+                  </div>
+
+
+
+                  <div class="flex items-center gap-1.5">
+                    <UserIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Trainer:</span>
+                    <span class="text-xs text-gray-700 truncate">{{ ob.trainer?.first_name + ' ' + ob.trainer?.last_name
+                      ||
+                      '—' }}</span>
+                  </div>
+
+
+
+                  <div class="flex items-center gap-1.5">
+                    <CalendarDaysIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Appointment Created:</span>
+                    <span class="text-xs text-gray-700">{{ ob.appointment?.created_at ?
+                      formatDateTime(ob.appointment.created_at) : '—' }}</span>
+                  </div>
+
+
+
+                  <!-- Location row -->
+                <div class="mt-2 flex items-center gap-1.5">
+                  <MapPinIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                  <a v-if="ob.client?.link_address" :href="ob.client.link_address" target="_blank"
+                    class="text-[10px] text-primary hover:underline inline-flex items-center gap-1">
+                    Link Address
+                  </a>
                 </div>
-                <div class="flex items-center gap-1.5">
-                  <CalendarDaysIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <span class="text-xs text-gray-500 shrink-0">Acc Created at:</span>
-                  <span class="text-xs text-gray-700 ml-0.5">{{ ob.account_created_at ?
-                    formatDateTime(ob.account_created_at)
-                    : '—' }}</span>
                 </div>
 
-                <!-- Row 2 -->
-                <div class="flex items-center gap-1.5">
-                  <UserIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <span class="text-xs text-gray-700 truncate">{{ ob.trainer?.name || '—' }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <TableCellsIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <span class="text-xs text-gray-500 shrink-0">Created at:</span>
-                  <span class="text-xs text-gray-700 ml-0.5">{{ ob.created_at ? formatDateTime(ob.created_at) : '—'
-                    }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <DocumentTextIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <span class="text-xs text-gray-500 shrink-0">SO:</span>
-                  <span class="text-xs text-gray-700 ml-0.5">{{ ob.so_number || '' }}</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <CalendarDaysIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <span class="text-xs text-gray-500 shrink-0">Acc Expired at:</span>
-                  <span class="text-xs text-gray-700 ml-0.5">{{ ob.account_expired_at ?
-                    formatDateTime(ob.account_expired_at)
-                    : '—' }}</span>
+                <div class="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                  <p class="text-[10px] uppercase tracking-wider text-primary font-semibold">Sales Detail</p>
+
+                  <div class="flex items-center gap-1.5">
+                    <UserIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Salesperson:</span>
+                    <span class="text-xs text-gray-800 font-medium truncate">{{ salespersonName }}</span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <DocumentTextIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Sale Order Code:</span>
+                    <button type="button" @click="openSalesHistory" :disabled="!latestSale"
+                      class="text-[10px] text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed">
+                      {{ latestSale?.sale_order_code || '—' }}
+                    </button>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <CalendarDaysIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Account Created:</span>
+                    <span class="text-xs text-gray-700">
+                      {{ latestSale?.content?.acc_created_at ? formatDateTime(latestSale.content.acc_created_at) :
+                        (latestSale?.created_at ? formatDateTime(latestSale.created_at) : '—') }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <CalendarDaysIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Account Expired:</span>
+                    <span class="text-xs text-gray-700">
+                      {{ latestSale?.content?.acc_expired_at ? formatDateTime(latestSale.content.acc_expired_at) : '—'
+                      }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <TableCellsIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <span class="text-xs text-gray-500 shrink-0">Sale Amount:</span>
+                    <span class="text-xs text-gray-800 font-medium">${{ Number(latestSale?.content?.amount ||
+                      0).toLocaleString() }}</span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Location row -->
-              <div class="mt-2 flex items-center gap-1.5">
-                <MapPinIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                <span class="text-xs" :class="ob.client?.location ? 'text-primary' : 'text-gray-400'">
-                  {{ ob.client?.location || 'N/A' }}
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -164,12 +199,12 @@
               </button>
             </template>
             <template v-else>
-              <label class="cursor-pointer">
-                <input type="file" accept="image/*,.pdf" class="hidden" :disabled="ocrProcessing"
+              <label :class="isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'">
+                <input type="file" accept="image/*,.pdf" class="hidden" :disabled="ocrProcessing || isCompleted"
                   @change="handlePatentUpload" />
                 <span :class="[
                   'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
-                  ocrProcessing
+                  ocrProcessing || isCompleted
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-primary text-white hover:bg-primary-dark cursor-pointer'
                 ]">
@@ -179,7 +214,7 @@
               </label>
             </template>
             <!-- Save Change -->
-            <button @click="saveCompanyInfo" :disabled="savingCompany"
+            <button @click="saveCompanyInfo" :disabled="savingCompany || isCompleted"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <ArrowDownTrayIcon class="w-3.5 h-3.5" />
               {{ savingCompany ? 'Saving...' : 'Save Change' }}
@@ -199,10 +234,12 @@
               <img v-if="companyLogoPreview" :src="companyLogoPreview" class="w-full h-full object-cover" />
               <span v-else class="text-[10px] text-gray-400 text-center leading-tight px-2">Company<br />Logo</span>
             </div>
-            <label class="cursor-pointer">
-              <input type="file" accept="image/*" class="hidden" @change="handleLogoUpload" />
-              <span
-                class="px-3 py-1 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors">Upload</span>
+            <label :class="isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'">
+              <input type="file" accept="image/*" class="hidden" :disabled="isCompleted" @change="handleLogoUpload" />
+              <span :class="[
+                'px-3 py-1 text-xs border rounded transition-colors',
+                isCompleted ? 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed' : 'text-gray-600 border-gray-300 hover:bg-gray-50'
+              ]">Upload</span>
             </label>
           </div>
 
@@ -214,14 +251,14 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Company Name</label>
-                <input v-model="companyForm.company_name" type="text"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors" />
+                <input v-model="companyForm.company_name" type="text" :disabled="hasPatent || isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Type of Business</label>
-                <select v-model="companyForm.business_type"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors appearance-none">
+                <select v-model="companyForm.business_type" :disabled="isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors appearance-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20">
                   <option value="">Select an option</option>
                   <option v-for="bt in businessTypes" :key="bt.id" :value="bt.value || bt.id">
                     {{ bt.name_en }}
@@ -231,14 +268,14 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Owner's Name</label>
-                <input v-model="companyForm.owner_name" type="text"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors" />
+                <input v-model="companyForm.owner_name" type="text" :disabled="hasPatent || isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Phone Number</label>
-                <input v-model="companyForm.phone" type="text"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors" />
+                <input v-model="companyForm.phone" type="text" :disabled="isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
             </div>
 
@@ -248,15 +285,15 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">ឈ្មោះសហក្រាស</label>
-                <input v-model="companyForm.company_name_kh" type="text"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors" />
+                <input v-model="companyForm.company_name_kh" type="text" :disabled="isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">ប្រភេទអាជីវកម្ម</label>
                 <!-- Same v-model as English so they always stay in sync -->
-                <select v-model="companyForm.business_type"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors appearance-none">
+                <select v-model="companyForm.business_type" :disabled="isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors appearance-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20">
                   <option value="">Select an option</option>
                   <option v-for="bt in businessTypes" :key="bt.id" :value="bt.value || bt.id">
                     {{ bt.name_km || bt.name_en }}
@@ -266,14 +303,14 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">ឈ្មោះម្ចាស់សហក្រាស</label>
-                <input v-model="companyForm.owner_name_kh" type="text"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors" />
+                <input v-model="companyForm.owner_name_kh" type="text" :disabled="isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">អាសយដ្ឋានសហក្រាស</label>
-                <input v-model="companyForm.address_kh" type="text"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors" />
+                <input v-model="companyForm.address_kh" type="text" :disabled="isCompleted"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
             </div>
           </div>
@@ -293,26 +330,26 @@
                 <ChartBarIcon class="w-4 h-4 text-gray-500" />
                 <h3 class="text-sm font-semibold text-gray-900">System Analysis</h3>
               </div>
-              <button @click="saveAnalysis" :disabled="savingAnalysis"
-                class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60 transition-colors">
+              <button @click="saveAnalysis" :disabled="savingAnalysis || isCompleted"
+                class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
                 {{ savingAnalysis ? 'Saving...' : 'Save' }}
               </button>
             </div>
             <div class="divide-y divide-gray-50">
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Import Employees</span>
-                <input v-model.number="analysisForm.import_employee_count" type="number" min="0"
-                  class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                <input v-model.number="analysisForm.import_employee_count" type="number" min="0" :disabled="isCompleted"
+                  class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Connected Apps</span>
-                <input v-model.number="analysisForm.connected_app_count" type="number" min="0"
-                  class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                <input v-model.number="analysisForm.connected_app_count" type="number" min="0" :disabled="isCompleted"
+                  class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Mobile Profiles</span>
-                <input v-model.number="analysisForm.profile_mobile_count" type="number" min="0"
-                  class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                <input v-model.number="analysisForm.profile_mobile_count" type="number" min="0" :disabled="isCompleted"
+                  class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
             </div>
             <div v-if="analysisError" class="px-5 pb-3 text-xs text-red-600">{{ analysisError }}</div>
@@ -330,23 +367,25 @@
                 No policies configured
               </div>
               <div v-for="p in ob.policies" :key="p.id" class="flex items-center gap-3 px-5 py-3">
-                <button v-if="!p.is_checked" @click="checkPolicy(p.id)"
-                  class="w-4 h-4 rounded border-2 border-gray-300 hover:border-primary flex-shrink-0 transition-colors bg-white"></button>
-                <button v-else @click="uncheckPolicy(p.id)"
-                  class="flex-shrink-0 text-emerald-500 hover:text-amber-500 transition-colors" title="Uncheck policy">
+                <button v-if="!p.is_checked" @click="!isCompleted && checkPolicy(p.id)" :disabled="isCompleted"
+                  class="w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 transition-colors bg-white disabled:cursor-not-allowed"
+                  :class="isCompleted ? '' : 'hover:border-primary'"></button>
+                <button v-else @click="!isCompleted && uncheckPolicy(p.id)" :disabled="isCompleted"
+                  class="flex-shrink-0 transition-colors disabled:cursor-not-allowed"
+                  :class="isCompleted ? 'text-emerald-400' : 'text-emerald-500 hover:text-amber-500'" title="Uncheck policy">
                   <CheckCircleIcon class="w-4 h-4" />
                 </button>
                 <span :class="['flex-1 text-sm', p.is_checked ? 'line-through text-gray-400' : 'text-gray-700']">
                   {{ p.policy_name }}
                 </span>
                 <span v-if="p.is_default" class="text-[10px] uppercase tracking-wider text-gray-400">default</span>
-                <button v-if="!p.is_default && !p.is_checked" @click="promptRemovePolicy(p.id)"
+                <button v-if="!p.is_default && !p.is_checked && !isCompleted" @click="promptRemovePolicy(p.id)"
                   class="text-xs text-gray-400 hover:text-red-500 transition-colors">Remove</button>
               </div>
             </div>
 
             <!-- Add policy area -->
-            <div class="border-t border-gray-100 px-5 py-3">
+            <div v-if="!isCompleted" class="border-t border-gray-100 px-5 py-3">
               <div v-if="showAddPolicy" class="flex gap-2">
                 <input v-model="newPolicyName" placeholder="Policy name..."
                   class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -394,8 +433,9 @@
             <div v-for="(lesson, slotIdx) in slotsForCurrentPath" :key="slotIdx">
 
               <!-- Empty slot: click to pick from playlist -->
-              <div v-if="!lesson" @click="openPlaylistPicker(slotIdx)"
-                class="flex flex-col items-center justify-center py-8 gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
+              <div v-if="!lesson" @click="!isCompleted && openPlaylistPicker(slotIdx)"
+                class="flex flex-col items-center justify-center py-8 gap-2 transition-colors"
+                :class="isCompleted ? 'cursor-not-allowed opacity-40' : 'cursor-pointer hover:bg-gray-50'">
                 <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <VideoCameraIcon class="w-6 h-6 text-primary" />
                 </div>
@@ -432,7 +472,7 @@
                     class="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
                     <CheckCircleIcon class="w-3 h-3" /> Sent
                   </span>
-                  <template v-else>
+                  <template v-else-if="!isCompleted">
                     <button @click="promptSendLesson(lesson)"
                       class="px-2.5 py-1 text-xs font-medium text-primary border border-primary/30 rounded hover:bg-primary/5 transition-colors">Send</button>
                     <button @click="promptDeleteLesson(lesson.id)"
@@ -445,7 +485,7 @@
           </div>
 
           <!-- Add More Lesson -->
-          <div class="border-t border-gray-100 px-5 py-3">
+          <div v-if="!isCompleted" class="border-t border-gray-100 px-5 py-3">
             <button @click="extraEmptySlots++"
               class="text-xs font-medium text-primary hover:underline transition-colors">+
               Add More Lesson</button>
@@ -560,7 +600,7 @@
                 <h3 class="text-sm font-semibold text-gray-900">Patent</h3>
               </div>
               <!-- Re-upload button inside modal -->
-              <label v-if="!ocrProcessing" class="cursor-pointer">
+              <label v-if="!ocrProcessing && !isCompleted" class="cursor-pointer">
                 <input type="file" accept="image/*,.pdf" class="hidden" @change="handlePatentUpload" />
                 <span
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
@@ -670,7 +710,8 @@
               <!-- Right: patent certificate image -->
               <div class="flex-1 p-4 flex items-center justify-center bg-gray-50 min-h-[260px]">
                 <img v-if="patentPreviewUrl && !ocrProcessing" :src="patentPreviewUrl" alt="Patent Certificate"
-                  class="max-w-full max-h-[50vh] object-contain rounded border border-gray-200 shadow-sm" />
+                  @click="showPatentFullscreen = true"
+                  class="max-w-full max-h-[50vh] object-contain rounded border border-gray-200 shadow-sm cursor-zoom-in hover:opacity-90 transition-opacity" />
                 <div v-else-if="ocrProcessing" class="text-center">
                   <ArrowPathIcon class="w-8 h-8 text-primary/40 mx-auto mb-2 animate-spin" />
                   <p class="text-sm text-gray-400">Scanning…</p>
@@ -691,6 +732,34 @@
               </button>
             </div>
           </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Global saving overlay — blocks all interaction during any async action -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isSaving"
+          class="fixed inset-0 z-[9990] flex items-center justify-center bg-black/30 backdrop-blur-[1px]">
+          <div class="bg-white rounded-xl px-6 py-4 shadow-xl flex items-center gap-3">
+            <ArrowPathIcon class="w-5 h-5 text-primary animate-spin shrink-0" />
+            <span class="text-sm font-medium text-gray-700">Saving, please wait…</span>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Patent Fullscreen Lightbox -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showPatentFullscreen" class="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
+          @click="showPatentFullscreen = false">
+          <button @click="showPatentFullscreen = false"
+            class="absolute top-4 right-4 p-2 text-white/70 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+          <img :src="patentPreviewUrl" alt="Patent Certificate"
+            class="max-w-[90vw] max-h-[90vh] object-contain rounded shadow-2xl" @click.stop />
         </div>
       </Transition>
     </Teleport>
@@ -759,12 +828,17 @@
     <ConfirmModal :open="showDeleteLessonModal" title="Delete Lesson"
       message="Are you sure you want to delete this lesson? This cannot be undone." confirm-text="Delete" type="danger"
       @confirm="confirmDeleteLesson" @cancel="showDeleteLessonModal = false" />
+
+    <ConfirmModal :open="showLeaveModal" title="Unsaved Changes"
+      message="You have unsaved changes that will be lost if you leave this page. Save your work before leaving."
+      confirm-text="Leave anyway" cancel-text="Stay & Save" type="warning"
+      @confirm="confirmLeave" @cancel="cancelLeave" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import {
   ChevronLeftIcon,
   CheckIcon,
@@ -843,8 +917,12 @@ function handleWindowScroll() {
   saveViewState()
 }
 
-function handleBeforeUnload() {
+function handleBeforeUnload(e) {
   saveViewState()
+  if (isDirty.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
 }
 
 function restoreScrollPosition(scrollY) {
@@ -860,9 +938,28 @@ function formatDateTime(val) {
   try { return formatDateTimeFromISO(val) } catch { return formatDate(val) }
 }
 
+function openSalesHistory() {
+  if (!ob.value?.id) return
+  router.push({ name: 'TrainerOnboardingSalesDetail', params: { id: ob.value.id } })
+}
+
 const ob = ref(null)
 const loading = ref(true)
 const refreshing = ref(false)
+const latestSale = computed(() => (ob.value?.sales || [])[0] || null)
+const salespersonName = computed(() => {
+  const sale = ob.value?.sale
+  if (sale?.first_name || sale?.last_name) {
+    return [sale.first_name, sale.last_name].filter(Boolean).join(' ')
+  }
+
+  const saleCreator = latestSale.value?.createdBy || latestSale.value?.created_by
+  if (saleCreator?.first_name || saleCreator?.last_name) {
+    return [saleCreator.first_name, saleCreator.last_name].filter(Boolean).join(' ')
+  }
+
+  return '—'
+})
 
 // Modal states
 const showCompleteModal = ref(false)
@@ -876,9 +973,18 @@ const showDeleteLessonModal = ref(false)
 const deleteLessonId = ref(null)
 
 // Account status helper
+const isCompleted = computed(() => ob.value?.status === 'completed')
+const hasPatent   = computed(() => !!patentPreviewUrl.value)
+
 const accStatusActive = computed(() => {
-  const s = ob.value?.account_status?.toLowerCase()
-  return s === 'active' || s === 'activated'
+  const status = ob.value?.account_status
+  if (typeof status === 'string') {
+    const s = status.toLowerCase()
+    if (s === 'active' || s === 'activated') return true
+    if (s === 'inactive' || s === 'deactivated') return false
+  }
+
+  return Boolean(ob.value?.client?.is_active)
 })
 
 // Lessons — path tabs + slot management
@@ -1008,6 +1114,7 @@ async function confirmPlaylistSelection() {
 
 // Patent modal
 const showPatentModal = ref(false)
+const showPatentFullscreen = ref(false)
 
 // Company Info
 const companyForm = reactive({
@@ -1125,8 +1232,45 @@ function dismissOcrPanel() {
 
 // System Analysis
 const analysisForm = reactive({ import_employee_count: 0, connected_app_count: 0, profile_mobile_count: 0 })
+const analysisOriginal = ref({ import_employee_count: 0, connected_app_count: 0, profile_mobile_count: 0 })
 const savingAnalysis = ref(false)
 const analysisError = ref(null)
+
+const analysisDirty = computed(() =>
+  ['import_employee_count', 'connected_app_count', 'profile_mobile_count']
+    .some(k => analysisForm[k] !== analysisOriginal.value[k])
+)
+
+const isDirty = computed(() =>
+  companyDirty.value ||
+  analysisDirty.value ||
+  (showAddPolicy.value && !!newPolicyName.value.trim())
+)
+
+// Leave guard
+const showLeaveModal = ref(false)
+const pendingRoute = ref(null)
+const confirmedLeave = ref(false)
+
+onBeforeRouteLeave((to) => {
+  if (isDirty.value && !confirmedLeave.value) {
+    pendingRoute.value = to
+    showLeaveModal.value = true
+    return false
+  }
+})
+
+function confirmLeave() {
+  confirmedLeave.value = true
+  showLeaveModal.value = false
+  router.push(pendingRoute.value)
+  pendingRoute.value = null
+}
+
+function cancelLeave() {
+  showLeaveModal.value = false
+  pendingRoute.value = null
+}
 
 // Policies
 const showAddPolicy = ref(false)
@@ -1135,6 +1279,25 @@ const addingPolicy = ref(false)
 
 // Lessons
 const addingLesson = ref(false)
+
+// Per-action loading flags for operations that lacked them
+const togglingPolicy  = ref(false)
+const removingPolicy  = ref(false)
+const deletingLesson  = ref(false)
+const completing      = ref(false)
+
+const isSaving = computed(() =>
+  savingCompany.value ||
+  savingAnalysis.value ||
+  refreshing.value ||
+  addingPolicy.value ||
+  togglingPolicy.value ||
+  removingPolicy.value ||
+  addingLesson.value ||
+  sendingLesson.value ||
+  deletingLesson.value ||
+  completing.value
+)
 
 function capitalize(str) {
   if (!str) return ''
@@ -1180,6 +1343,7 @@ async function load() {
       analysisForm.import_employee_count = sa.import_employee_count || 0
       analysisForm.connected_app_count = sa.connected_app_count || 0
       analysisForm.profile_mobile_count = sa.profile_mobile_count || 0
+      Object.assign(analysisOriginal.value, { ...analysisForm })
     }
     fetchLessonTitles()
   } catch {
@@ -1227,6 +1391,10 @@ async function refreshProgress() {
 }
 
 async function saveCompanyInfo() {
+  if (!companyDirty.value) {
+    toast.info('No changes to save.')
+    return
+  }
   savingCompany.value = true
   companyError.value = null
   try {
@@ -1280,10 +1448,15 @@ async function saveCompanyInfo() {
 }
 
 async function saveAnalysis() {
+  if (!analysisDirty.value) {
+    toast.info('No changes to save.')
+    return
+  }
   savingAnalysis.value = true
   analysisError.value = null
   try {
     await onboardingService.updateSystemAnalysis(ob.value.id, analysisForm)
+    Object.assign(analysisOriginal.value, { ...analysisForm })
     toast.success('System analysis saved.')
   } catch (err) {
     analysisError.value = err.response?.data?.message || 'Failed to save.'
@@ -1309,21 +1482,27 @@ async function addPolicy() {
 }
 
 async function checkPolicy(policyId) {
+  togglingPolicy.value = true
   try {
     await onboardingService.checkPolicy(ob.value.id, policyId)
     await load()
   } catch (err) {
     toast.error(err.response?.data?.message || 'Failed.')
+  } finally {
+    togglingPolicy.value = false
   }
 }
 
 async function uncheckPolicy(policyId) {
+  togglingPolicy.value = true
   try {
     await onboardingService.uncheckPolicy(ob.value.id, policyId)
     toast.success('Policy unchecked.')
     await load()
   } catch (err) {
     toast.error(err.response?.data?.message || 'Failed.')
+  } finally {
+    togglingPolicy.value = false
   }
 }
 
@@ -1333,12 +1512,15 @@ function promptRemovePolicy(policyId) {
 }
 
 async function confirmRemovePolicy() {
+  removingPolicy.value = true
   try {
     await onboardingService.removePolicy(ob.value.id, removePolicyId.value)
     showRemovePolicyModal.value = false
     await load()
   } catch (err) {
     toast.error(err.response?.data?.message || 'Failed.')
+  } finally {
+    removingPolicy.value = false
   }
 }
 
@@ -1370,16 +1552,20 @@ function promptDeleteLesson(lessonId) {
 }
 
 async function confirmDeleteLesson() {
+  deletingLesson.value = true
   try {
     await onboardingService.deleteLesson(ob.value.id, deleteLessonId.value)
     showDeleteLessonModal.value = false
     await load()
   } catch (err) {
     toast.error(err.response?.data?.message || 'Failed.')
+  } finally {
+    deletingLesson.value = false
   }
 }
 
 async function handleComplete() {
+  completing.value = true
   try {
     await onboardingService.completeOnboarding(ob.value.id)
     toast.success('Onboarding completed!')
@@ -1387,6 +1573,8 @@ async function handleComplete() {
     await load()
   } catch (err) {
     toast.error(err.response?.data?.message || 'Failed to complete.')
+  } finally {
+    completing.value = false
   }
 }
 

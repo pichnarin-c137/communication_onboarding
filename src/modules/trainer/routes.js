@@ -42,6 +42,12 @@ export default [
     meta: { layout: 'trainer', title: 'Onboarding Detail', role: 'trainer' }
   },
   {
+    path: '/trainer/onboarding/:id/sales',
+    name: 'TrainerOnboardingSalesDetail',
+    component: () => import('@/modules/trainer/views/ClientSalesDetailView.vue'),
+    meta: { layout: 'trainer', title: 'Client Sales', role: 'trainer' }
+  },
+  {
     path: '/trainer/lessons',
     name: 'TrainerLessons',
     component: () => import('@/modules/trainer/views/LessonsView.vue'),

@@ -12,7 +12,7 @@
           <ArrowDownTrayIcon class="w-4 h-4" />
           Export Excel
         </button>
-        <button @click="router.push('/trainer/appointments/create')"
+        <button @click="eventStore.openCreateModal()"
           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
           <PlusIcon class="w-4 h-4" />
           New Appointment
@@ -81,9 +81,20 @@
     <SkeletonLoader v-if="loading" type="table" :count="5" />
 
     <div v-else-if="appointments.length === 0" class="text-center py-16 bg-white rounded-xl border border-gray-200">
-      <CalendarDaysIcon class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-      <p class="text-sm font-medium text-gray-500">No appointments found</p>
-      <p class="text-xs text-gray-500 mt-1">Try adjusting your filters</p>
+      <CalendarDaysIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+      <p class="text-sm font-semibold text-gray-700">No appointments found</p>
+      <p class="text-xs text-gray-500 mt-1">Try adjusting your filters or schedule a new appointment.</p>
+      <div class="mt-4 flex items-center justify-center gap-2">
+        <button v-if="hasActiveFilters" @click="resetFilters"
+          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Reset Filters
+        </button>
+        <button @click="eventStore.openCreateModal()"
+          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+          <PlusIcon class="w-4 h-4" />
+          New Appointment
+        </button>
+      </div>
     </div>
 
     <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -118,13 +129,13 @@
               {{ appt.client?.company_name || '—' }}
             </td>
             <td class="px-4 py-3 hidden md:table-cell">
-              <span :class="['text-xs font-medium px-1.5 py-0.5 rounded capitalize',
+              <span :class="['text-xs font-medium px-2.5 py-0.5 rounded-full capitalize',
                 appt.appointment_type === 'demo' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700']">
                 {{ appt.appointment_type }}
               </span>
             </td>
             <td class="px-4 py-3 hidden md:table-cell">
-              <span :class="['text-xs font-medium px-1.5 py-0.5 rounded capitalize',
+              <span :class="['text-xs font-medium px-2.5 py-0.5 rounded-full capitalize',
                 appt.location_type === 'online' ? 'bg-blue-50 text-blue-600'
                 : appt.location_type === 'hybrid' ? 'bg-purple-50 text-purple-600'
                 : 'bg-gray-100 text-gray-600']">
@@ -146,11 +157,11 @@
       <!-- Pagination -->
       <div v-if="meta.last_page > 1" class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
         <p class="text-xs text-gray-500">Showing {{ meta.from }}–{{ meta.to }} of {{ meta.total }}</p>
-        <div class="flex gap-1">
+        <div class="flex gap-1.5">
           <button @click="goToPage(meta.current_page - 1)" :disabled="meta.current_page === 1"
-            class="px-3 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50">Prev</button>
+            class="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors">Prev</button>
           <button @click="goToPage(meta.current_page + 1)" :disabled="meta.current_page === meta.last_page"
-            class="px-3 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50">Next</button>
+            class="px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors">Next</button>
         </div>
       </div>
     </div>
@@ -161,11 +172,13 @@
       :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }">
       {{ tooltip.text }}
     </div>
+
+    <CreateEventModal />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronRightIcon, CalendarDaysIcon, MagnifyingGlassIcon, XMarkIcon, ArrowDownTrayIcon, PlusIcon } from '@heroicons/vue/24/outline'
 import { trainerService } from '@/modules/trainer/services/trainerService.js'
@@ -174,9 +187,12 @@ import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import { useSettingsStore } from '@/modules/shared/store/settings'
+import { useEventStore } from '@/modules/shared/store/events.js'
+import CreateEventModal from '@/modules/shared/components/CreateEventModal.vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
+const eventStore = useEventStore()
 const { formatDateMed: formatDate, formatTime } = useDateTime()
 
 const loading = ref(true)
@@ -267,6 +283,10 @@ function exportCSV() {
 }
 
 onBeforeUnmount(() => { if (searchDebounceTimer) clearTimeout(searchDebounceTimer) })
+
+watch(() => eventStore.isCreateModalOpen, (isOpen, wasOpen) => {
+  if (!isOpen && wasOpen) load(1)
+})
 
 onMounted(async () => {
   if (!settingsStore.settings) await settingsStore.fetchSettings()

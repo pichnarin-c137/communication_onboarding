@@ -71,11 +71,11 @@ export const useEventStore = defineStore('events', {
 
   actions: {
     // Load calendar events (FullCalendar data source)
-    async loadEvents() {
+    async loadEvents(params = {}) {
       const authStore = useAuthStore()
       try {
         const service  = authStore.isTrainer ? trainerService : saleService
-        const response = await service.getAppointments({ per_page: 200 })
+        const response = await service.getAppointments({ per_page: 200, ...params })
         const appts    = response.data || []
         this.events    = appts.map(appointmentToEvent)
       } catch {
