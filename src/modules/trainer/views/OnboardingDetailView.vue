@@ -15,6 +15,42 @@
     <SkeletonLoader v-if="loading" type="cards" :count="3" />
 
     <template v-else-if="ob">
+      <!-- On-hold banner -->
+      <div
+        v-if="ob.status === 'on_hold'"
+        class="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      >
+        <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </svg>
+        <div><span class="font-semibold">On Hold:</span> {{ ob.hold_reason }}</div>
+      </div>
+
+      <!-- Revision-requested banner -->
+      <div
+        v-if="ob.status === 'revision_requested'"
+        class="mb-4 flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800"
+      >
+        <svg class="mt-0.5 h-4 w-4 shrink-0 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div><span class="font-semibold">Revision Requested:</span> {{ ob.revision_note }}</div>
+      </div>
+
+      <!-- Cycle banner -->
+      <div
+        v-if="ob.cycle > 1"
+        class="mb-4 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800"
+      >
+        <svg class="h-4 w-4 shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+        </svg>
+        <span>This is <strong>Cycle {{ ob.cycle }}</strong> for {{ ob.client?.company_name }}.</span>
+        <button class="ml-auto text-blue-600 hover:text-blue-800 font-medium text-xs" @click="showCycleDrawer = true">
+          View previous cycles →
+        </button>
+      </div>
+
       <!--  Top action bar: Progress + Refresh + Mark Complete  -->
       <div class="bg-white border border-gray-200 rounded-xl px-5 py-3.5 flex items-center gap-5">
         <!-- Percentage badge -->
@@ -42,22 +78,62 @@
         <div class="flex items-center gap-2 shrink-0">
           <StatusBadge :status="ob.status" />
 
+          <!-- Resume from hold -->
+          <button
+            v-if="ob.status === 'on_hold'"
+            @click="handleResume"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Resume
+          </button>
+
+          <!-- Acknowledge & Resume -->
+          <button
+            v-if="ob.status === 'revision_requested'"
+            @click="handleAcknowledge"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
+          >
+            Acknowledge &amp; Resume
+          </button>
+
           <template v-if="ob.status === 'in_progress'">
+            <!-- Put On Hold -->
+            <button
+              @click="showHoldModal = true"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Put On Hold
+            </button>
+
             <button @click="refreshProgress" :disabled="refreshing"
               class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors">
               <ArrowPathIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshing }" />
               {{ refreshing ? 'Refreshing...' : 'Refresh' }}
             </button>
 
-            <button @click="showCompleteModal = true" :disabled="ob.progress_percentage < 90"
-              :title="ob.progress_percentage < 90 ? `${Math.round(90 - ob.progress_percentage)}% more needed` : 'Mark this onboarding as complete'"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-700 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">
-              <CheckCircleIcon class="w-3.5 h-3.5" />
-              Mark as Complete
-            </button>
+            <div class="relative group">
+              <button @click="showCompleteModal = true" :disabled="!canComplete"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-700 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">
+                <CheckCircleIcon class="w-3.5 h-3.5" />
+                Mark as Complete
+              </button>
+              <div
+                v-if="!canComplete"
+                class="absolute right-0 top-full mt-1 z-20 w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+              >
+                {{ completeTooltip }}
+              </div>
+            </div>
           </template>
         </div>
       </div>
+
+      <!-- Info strip — visible above the fold -->
+      <OnboardingInfoStrip
+        v-if="ob"
+        :onboarding-id="ob.id"
+        @open="openPanelDrawer"
+      />
 
       <!-- Client profile header card -->
       <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -214,7 +290,7 @@
               </label>
             </template>
             <!-- Save Change -->
-            <button @click="saveCompanyInfo" :disabled="savingCompany || isCompleted"
+            <button @click="saveCompanyInfo" :disabled="savingCompany || isReadOnly"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
               <ArrowDownTrayIcon class="w-3.5 h-3.5" />
               {{ savingCompany ? 'Saving...' : 'Save Change' }}
@@ -330,7 +406,7 @@
                 <ChartBarIcon class="w-4 h-4 text-gray-500" />
                 <h3 class="text-sm font-semibold text-gray-900">System Analysis</h3>
               </div>
-              <button @click="saveAnalysis" :disabled="savingAnalysis || isCompleted"
+              <button @click="saveAnalysis" :disabled="savingAnalysis || isReadOnly"
                 class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
                 {{ savingAnalysis ? 'Saving...' : 'Save' }}
               </button>
@@ -385,7 +461,7 @@
             </div>
 
             <!-- Add policy area -->
-            <div v-if="!isCompleted" class="border-t border-gray-100 px-5 py-3">
+            <div v-if="!isReadOnly" class="border-t border-gray-100 px-5 py-3">
               <div v-if="showAddPolicy" class="flex gap-2">
                 <input v-model="newPolicyName" placeholder="Policy name..."
                   class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -485,7 +561,7 @@
           </div>
 
           <!-- Add More Lesson -->
-          <div v-if="!isCompleted" class="border-t border-gray-100 px-5 py-3">
+          <div v-if="!isReadOnly" class="border-t border-gray-100 px-5 py-3">
             <button @click="extraEmptySlots++"
               class="text-xs font-medium text-primary hover:underline transition-colors">+
               Add More Lesson</button>
@@ -579,6 +655,16 @@
           </div>
         </Transition>
       </Teleport>
+
+    <!-- Sessions / Feedback / Revisions drawer -->
+    <OnboardingPanelsDrawer
+      v-if="ob"
+      :open="showPanelDrawer"
+      :onboarding-id="ob.id"
+      :initial-section="panelSection"
+      @close="showPanelDrawer = false"
+      @feedback-updated="onFeedbackUpdated"
+    />
 
     </template>
 
@@ -833,6 +919,46 @@
       message="You have unsaved changes that will be lost if you leave this page. Save your work before leaving."
       confirm-text="Leave anyway" cancel-text="Stay & Save" type="warning"
       @confirm="confirmLeave" @cancel="cancelLeave" />
+
+    <!-- Hold Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showHoldModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div class="absolute inset-0 bg-black/40" @click="showHoldModal = false" />
+          <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+            <h2 class="font-semibold text-gray-900 mb-1">Put Onboarding On Hold</h2>
+            <p class="text-sm text-gray-500 mb-4">Provide a reason. All forms will become read-only.</p>
+            <textarea
+              v-model="holdReason"
+              rows="4"
+              placeholder="Reason (min 10 characters)..."
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none mb-4"
+            />
+            <div class="flex justify-end gap-2">
+              <button @click="showHoldModal = false"
+                class="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button
+                :disabled="holdReason.trim().length < 10 || holdSubmitting"
+                @click="handleHold"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {{ holdSubmitting ? 'Confirming...' : 'Confirm Hold' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Cycle History Drawer -->
+    <CycleHistoryDrawer
+      :open="showCycleDrawer"
+      :onboarding-id="ob?.id"
+      role="trainer"
+      @close="showCycleDrawer = false"
+    />
   </div>
 </template>
 
@@ -874,6 +1000,10 @@ import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import ConfirmModal from '@/modules/shared/components/ConfirmModal.vue'
+import OnboardingInfoStrip from '@/modules/shared/components/OnboardingInfoStrip.vue'
+import OnboardingPanelsDrawer from '@/modules/shared/components/OnboardingPanelsDrawer.vue'
+import CycleHistoryDrawer from '@/modules/shared/components/CycleHistoryDrawer.vue'
+import StarRating from '@/modules/shared/components/StarRating.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -972,9 +1102,46 @@ const sendingLesson = ref(false)
 const showDeleteLessonModal = ref(false)
 const deleteLessonId = ref(null)
 
+// On-hold modal
+const showHoldModal = ref(false)
+const holdReason = ref('')
+const holdSubmitting = ref(false)
+
+// Feedback (kept for completion-check computed)
+const feedbackStatus = ref(null)
+const feedbackRating = ref(null)
+
+// Panel drawer
+const showPanelDrawer = ref(false)
+const panelSection = ref('sessions')
+
+function openPanelDrawer(section) {
+  panelSection.value = section
+  showPanelDrawer.value = true
+}
+
+// Cycle history drawer
+const showCycleDrawer = ref(false)
+
 // Account status helper
 const isCompleted = computed(() => ob.value?.status === 'completed')
 const hasPatent   = computed(() => !!patentPreviewUrl.value)
+
+const isReadOnly = computed(() =>
+  ['on_hold', 'revision_requested', 'completed', 'cancelled'].includes(ob.value?.status)
+)
+
+const canComplete = computed(() =>
+  (ob.value?.progress_percentage ?? 0) >= 90 && feedbackStatus.value === 'received'
+)
+
+const completeTooltip = computed(() => {
+  const msgs = []
+  const prog = ob.value?.progress_percentage ?? 0
+  if (prog < 90) msgs.push(`Progress is ${Math.round(prog)}%. At least 90% is required.`)
+  if (feedbackStatus.value !== 'received') msgs.push('Client feedback has not been submitted yet.')
+  return msgs.join(' ')
+})
 
 const accStatusActive = computed(() => {
   const status = ob.value?.account_status
@@ -1309,6 +1476,9 @@ async function load() {
   try {
     const response = await onboardingService.getOnboarding(route.params.id)
     ob.value = response.data
+    if (['in_progress', 'completed'].includes(ob.value?.status)) {
+      loadFeedbackStatus()
+    }
     const ci = ob.value?.company_info
     if (ci) {
       // All company data is serialized as JSON inside the `content` field
@@ -1576,6 +1746,58 @@ async function handleComplete() {
   } finally {
     completing.value = false
   }
+}
+
+async function handleHold() {
+  if (!holdReason.value.trim() || holdReason.value.trim().length < 10) return
+  holdSubmitting.value = true
+  try {
+    await onboardingService.holdOnboarding(ob.value.id, holdReason.value.trim())
+    showHoldModal.value = false
+    holdReason.value = ''
+    await load()
+    toast.success('Onboarding put on hold.')
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to put on hold.')
+  } finally {
+    holdSubmitting.value = false
+  }
+}
+
+async function handleResume() {
+  try {
+    await onboardingService.resumeFromHold(ob.value.id)
+    await load()
+    toast.success('Onboarding resumed.')
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to resume.')
+  }
+}
+
+async function handleAcknowledge() {
+  try {
+    await onboardingService.acknowledgeRevision(ob.value.id)
+    await load()
+    toast.success('Revision acknowledged. You can now continue.')
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to acknowledge.')
+  }
+}
+
+async function loadFeedbackStatus() {
+  try {
+    const data = await onboardingService.getFeedbackStatus(ob.value.id)
+    feedbackStatus.value = data.status ?? null
+    feedbackRating.value = data.rating ?? null
+  } catch {
+    // non-critical
+  }
+}
+
+function onFeedbackUpdated(data) {
+  if (!data) return
+  feedbackStatus.value = data.status ?? feedbackStatus.value
+  feedbackRating.value = data.rating ?? feedbackRating.value
 }
 
 onMounted(async () => {

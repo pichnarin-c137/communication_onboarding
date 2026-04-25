@@ -3,8 +3,7 @@
     <div class="w-full max-w-md">
       <!-- Logo & Header -->
       <div class="text-center mb-8">
-        <div
-          class="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-lg mb-4">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-lg mb-4">
           <span class="text-white font-bold text-2xl">CM</span>
         </div>
         <h1 class="text-2xl font-bold text-gray-900">Welcome to COMS</h1>
@@ -51,7 +50,10 @@
                 class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary" />
               <span class="text-sm text-gray-600">Remember me</span>
             </label>
-            <a href="#" class="text-sm text-primary hover:text-primary-dark font-medium">Forgot password?</a>
+            <button type="button" @click="handleForgotPassword" :disabled="forgotLoading || authStore.loading"
+              class="text-sm text-primary hover:text-primary-dark font-medium disabled:opacity-60 disabled:pointer-events-none">
+              Forgot password?
+            </button>
           </div>
 
           <button type="submit" :disabled="authStore.loading"
@@ -77,6 +79,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import AuthService from '@/modules/auth/services/auth.service'
+import { useToast } from '@/modules/shared/composables/useToast'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -85,6 +89,8 @@ const identifier = ref('')
 const password = ref('')
 const rememberMe = ref(false)
 const showPassword = ref(false)
+const forgotLoading = ref(false)
+const { success, error, warning } = useToast()
 
 async function handleLogin() {
   authStore.clearError()
@@ -97,6 +103,24 @@ async function handleLogin() {
     router.push('/otp')
   } catch {
     // error is set in the store
+  }
+}
+
+async function handleForgotPassword() {
+  if (!identifier.value.trim()) {
+    warning('Enter your email to receive reset instructions.')
+    return
+  }
+
+  forgotLoading.value = true
+  try {
+    await AuthService.forgotPassword(identifier.value.trim())
+    success('If this email exists, reset instructions have been sent.')
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    error(message || 'Unable to send reset email.')
+  } finally {
+    forgotLoading.value = false
   }
 }
 </script>

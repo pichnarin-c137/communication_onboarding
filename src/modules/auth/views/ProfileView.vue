@@ -147,7 +147,7 @@
             @click="showPasswordModal = true"
             class="px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
           >
-            Change
+            Change password
           </button>
         </div>
 
@@ -305,68 +305,124 @@
     <!-- Change Password Modal -->
     <Transition name="fade">
       <div v-if="showPasswordModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40" @click="closePasswordModal"></div>
-        <div class="relative bg-white rounded-lg shadow-md w-full max-w-md p-6 z-10">
-          <h3 class="text-lg font-semibold text-gray-900 mb-1">Change Password</h3>
-          <p class="text-sm text-gray-500 mb-5">Enter your current password, then choose a new one.</p>
-
-          <div v-if="passwordError" class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {{ passwordError }}
-          </div>
-
-          <form @submit.prevent="submitPasswordChange" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
-              <input
-                v-model="passwordForm.current"
-                type="password"
-                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
-              <input
-                v-model="passwordForm.next"
-                type="password"
-                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                placeholder="••••••••"
-                required
-                minlength="8"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password</label>
-              <input
-                v-model="passwordForm.confirm"
-                type="password"
-                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            <div class="flex gap-3 pt-2">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" @click="closePasswordModal"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden z-10 border border-gray-100">
+          <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">Change Password</h3>
+                <p class="text-sm text-gray-500 mt-1">Protect your account with a strong new password.</p>
+              </div>
               <button
                 type="button"
                 @click="closePasswordModal"
-                class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                class="w-9 h-9 rounded-full inline-flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Close password modal"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                :disabled="passwordChanging"
-                class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <svg v-if="passwordChanging" class="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                {{ passwordChanging ? 'Updating...' : 'Update Password' }}
+                <span class="text-xl leading-none">×</span>
               </button>
             </div>
-          </form>
+          </div>
+
+          <div class="px-6 py-5">
+            <div class="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              <p class="font-medium">Password tips</p>
+              <p class="mt-1 text-blue-700/90">Use at least 8 characters and avoid reusing old passwords.</p>
+            </div>
+
+            <div v-if="passwordError" class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              <p class="font-medium">Couldn’t update password</p>
+              <p class="mt-1 whitespace-pre-line">{{ passwordError }}</p>
+            </div>
+
+            <form @submit.prevent="submitPasswordChange" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
+                <div class="relative">
+                  <input
+                    v-model="passwordForm.current"
+                    :type="showCurrentPassword ? 'text' : 'password'"
+                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    placeholder="Enter your current password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    @click="showCurrentPassword = !showCurrentPassword"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    :aria-label="showCurrentPassword ? 'Hide current password' : 'Show current password'"
+                  >
+                    <EyeIcon v-if="!showCurrentPassword" class="w-5 h-5" />
+                    <EyeSlashIcon v-else class="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+                <div class="relative">
+                  <input
+                    v-model="passwordForm.new"
+                    :type="showNewPassword ? 'text' : 'password'"
+                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    placeholder="Create a new password"
+                    required
+                    minlength="8"
+                  />
+                  <button
+                    type="button"
+                    @click="showNewPassword = !showNewPassword"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    :aria-label="showNewPassword ? 'Hide new password' : 'Show new password'"
+                  >
+                    <EyeIcon v-if="!showNewPassword" class="w-5 h-5" />
+                    <EyeSlashIcon v-else class="w-5 h-5" />
+                  </button>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">Use a mix of letters, numbers, and symbols for better security.</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password</label>
+                <div class="relative">
+                  <input
+                    v-model="passwordForm.confirm"
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    placeholder="Re-enter new password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    @click="showConfirmPassword = !showConfirmPassword"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    :aria-label="showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'"
+                  >
+                    <EyeIcon v-if="!showConfirmPassword" class="w-5 h-5" />
+                    <EyeSlashIcon v-else class="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+                <button
+                  type="button"
+                  @click="closePasswordModal"
+                  class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  :disabled="passwordChanging"
+                  class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <svg v-if="passwordChanging" class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  {{ passwordChanging ? 'Updating...' : 'Update Password' }}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </Transition>
@@ -375,13 +431,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   CameraIcon,
   LockClosedIcon,
   KeyIcon,
   ShieldCheckIcon,
   ClockIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from '@heroicons/vue/24/outline'
 import api from '@core/services/api'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
@@ -395,6 +453,7 @@ const ENDPOINTS = {
 }
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
 
@@ -467,31 +526,51 @@ const memberSince = computed(() => {
 })
 
 const showPasswordModal = ref(false)
-const passwordForm = ref({ current: '', next: '', confirm: '' })
+const passwordForm = ref({ current: '', new: '', confirm: '' })
 const passwordChanging = ref(false)
 const passwordError = ref(null)
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 function closePasswordModal() {
   showPasswordModal.value = false
-  passwordForm.value = { current: '', next: '', confirm: '' }
+  passwordForm.value = { current: '', new: '', confirm: '' }
   passwordError.value = null
+  showCurrentPassword.value = false
+  showNewPassword.value = false
+  showConfirmPassword.value = false
 }
 
 async function submitPasswordChange() {
-  if (passwordForm.value.next !== passwordForm.value.confirm) {
-    passwordError.value = 'New passwords do not match.'
+  if (passwordChanging.value) return
+
+  passwordError.value = null
+
+  if (passwordForm.value.new !== passwordForm.value.confirm) {
+    passwordError.value = 'New password and confirmation do not match.'
     return
   }
+
   passwordChanging.value = true
-  passwordError.value = null
   try {
-    await api.post('/auth/change-password', {
-      current_password: passwordForm.value.current,
-      new_password: passwordForm.value.next,
+    await api.patch('/auth/change-password', {
+      old_password: passwordForm.value.current,
+      password: passwordForm.value.new,
+      password_confirmation: passwordForm.value.confirm,
     })
+
     closePasswordModal()
+    router.go(0)
   } catch (err) {
-    passwordError.value = err?.response?.data?.message ?? 'Failed to change password. Please check your current password.'
+    const data = err.response?.data
+    if (data?.error_code === 'MULTIPLE_PATCH') {
+      passwordError.value = data?.message
+    } else if (Array.isArray(data?.errors) && data.errors.length) {
+      passwordError.value = data.errors.join('\n')
+    } else {
+      passwordError.value = data?.message ?? 'An unexpected error occurred. Please try again later.'
+    }
   } finally {
     passwordChanging.value = false
   }
