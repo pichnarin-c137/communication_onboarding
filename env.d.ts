@@ -1,4 +1,4 @@
-/// <reference types="vite/client" />
+  /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string
@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_GOOGLE_REDIECT: string
   readonly VITE_GOOGLE_STATUS: string
   readonly VITE_GOOGLE_DISCONNECT: string
+  readonly VITE_AUTH_FORGOT_PASSWORD: string
 }
 
 interface ImportMeta {

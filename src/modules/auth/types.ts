@@ -80,4 +80,5 @@ export enum AuthErrorMessages {
   TOKEN_EXPIRED = 'Your session has expired. Please login again.',
   LOGOUT_FAILED = 'Logout failed. Please try again.',
   PROFILE_FETCH_FAILED = 'Failed to load user profile. Please refresh.',
+  FORGOT_PASSWORD_FAILED = 'Failed to send password reset instructions. Please try again.'
 }

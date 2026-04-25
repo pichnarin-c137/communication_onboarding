@@ -1,4 +1,5 @@
 import api from '@/core/services/api.js'
+import axios from 'axios'
 
 export const onboardingService = {
   // Onboarding Requests
@@ -133,5 +134,87 @@ export const onboardingService = {
     const body = message ? { message } : {}
     const response = await api.post(`/onboarding/${onboardingId}/lessons/${lessonId}/send`, body)
     return response.data
+  },
+
+  // Scenario 1 — Linked Sessions
+  async getLinkedSessions(onboardingId) {
+    const res = await api.get(`/onboarding/${onboardingId}/appointments`)
+    console.log('Linked sessions:', res.data.data)
+    return res.data.data
+  },
+
+  // Scenario 2 — Cycle History
+  async getCycleHistory(onboardingId) {
+    const res = await api.get(`/onboarding/${onboardingId}/cycles`)
+    return res.data.data
+  },
+
+  // Scenario 3 — Reopen
+  async reopenOnboarding(id) {
+    const res = await api.patch(`/onboarding/${id}/reopen`)
+    return res.data.data
+  },
+
+  // Scenario 4 — On Hold / Resume
+  async holdOnboarding(id, reason) {
+    const res = await api.patch(`/onboarding/${id}/hold`, { reason })
+    return res.data.data
+  },
+  async resumeFromHold(id) {
+    const res = await api.patch(`/onboarding/${id}/resume`)
+    return res.data.data
+  },
+
+  // Scenario 5 — Revision
+  async requestRevision(id, note) {
+    const res = await api.patch(`/onboarding/${id}/request-revision`, { note })
+    return res.data.data
+  },
+  async acknowledgeRevision(id) {
+    const res = await api.patch(`/onboarding/${id}/acknowledge-revision`)
+    return res.data.data
+  },
+  async getRevisionHistory(id) {
+    const res = await api.get(`/onboarding/${id}/revision-history`)
+    return res.data.data
+  },
+
+  // Scenario 6 — Feedback
+  async requestFeedbackEmail(id) {
+    const res = await api.post(`/onboarding/${id}/request-feedback`)
+    return res.data.data
+  },
+  async submitManualFeedback(id, rating, comment) {
+    const res = await api.post(`/onboarding/${id}/manual-feedback`, { rating, comment })
+    return res.data.data
+  },
+  async getFeedbackStatus(id) {
+    const res = await api.get(`/onboarding/${id}/feedback-status`)
+    return res.data.data
+  },
+
+  // Scenario 8 — Trainer Reassignment
+  async getAvailableTrainers() {
+    const res = await api.get('/trainers', { params: { available: true } })
+    return res.data.data
+  },
+  async reassignTrainer(id, trainerId, notes) {
+    const res = await api.patch(`/onboarding/${id}/reassign`, { trainer_id: trainerId, notes })
+    return res.data.data
+  },
+  async getTrainerHistory(id) {
+    const res = await api.get(`/onboarding/${id}/trainer-history`)
+    return res.data.data
+  }
+}
+
+export const feedbackService = {
+  async getFeedbackForm(token) {
+    const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/feedback/${token}`)
+    return res.data.data
+  },
+  async submitClientFeedback(token, data) {
+    const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/feedback/${token}`, data)
+    return res.data.data
   }
 }

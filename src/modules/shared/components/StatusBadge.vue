@@ -60,6 +60,9 @@ const statusMap = {
   // Telegram message statuses
   sent:        { label: 'Sent',        bg: '#DCFCE7', text: '#15803D', dot: '#22C55E' },
   failed:      { label: 'Failed',      bg: '#FEE2E2', text: '#DC2626', dot: '#F87171' },
+  // Onboarding lifecycle statuses
+  on_hold:             { label: 'On Hold',            bg: '#FEF3C7', text: '#B45309', dot: '#F59E0B' },
+  revision_requested:  { label: 'Revision Requested', bg: '#FFEDD5', text: '#C2410C', dot: '#FB923C' },
 }
 
 const config = computed(() =>

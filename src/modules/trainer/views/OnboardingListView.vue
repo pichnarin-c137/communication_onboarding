@@ -26,6 +26,8 @@
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
           <option value="in_progress">In Progress</option>
+          <option value="on_hold">On Hold</option>
+          <option value="revision_requested">Revision Requested</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
@@ -72,7 +74,15 @@
         <tbody class="divide-y divide-gray-100">
           <tr v-for="ob in onboardings" :key="ob.id" class="hover:bg-gray-50 cursor-pointer transition-colors"
             @click="handleRowClick(ob)">
-            <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ ob.request_code }}</td>
+            <td class="px-4 py-3 font-mono text-xs text-gray-600">
+              {{ ob.request_code }}
+              <span
+                v-if="ob.cycle > 1"
+                class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700"
+              >
+                Cycle {{ ob.cycle }}
+              </span>
+            </td>
             <td class="px-4 py-3 hidden sm:table-cell font-medium text-gray-900">{{ ob.client?.company_name || '—' }}
             </td>
             <td class="px-4 py-3 hidden md:table-cell text-gray-600">{{ ob.system?.name || '—' }}</td>

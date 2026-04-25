@@ -16,6 +16,7 @@ const ENDPOINTS = {
   REFRESH_TOKEN: import.meta.env.VITE_AUTH_REFRESH,
   LOGOUT: import.meta.env.VITE_USER_LOGOUT,
   PROFILE: import.meta.env.VITE_USER_PROFILE,
+  FORGOT_PASSWORD: import.meta.env.VITE_AUTH_FORGOT_PASSWORD,
 } as const
 
 class AuthService {
@@ -60,6 +61,14 @@ class AuthService {
       return response.data
     } catch (error: unknown) {
       throwError(extractErrorMessage(error) || AuthErrorMessages.PROFILE_FETCH_FAILED)
+    }
+  }
+
+  static async forgotPassword(email: string): Promise<void> {
+    try {
+      await api.patch(ENDPOINTS.FORGOT_PASSWORD, { email })
+    } catch (error: unknown) {
+      throwError(extractErrorMessage(error) || AuthErrorMessages.FORGOT_PASSWORD_FAILED)
     }
   }
 }

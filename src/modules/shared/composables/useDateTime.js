@@ -17,7 +17,10 @@ export function useDateTime() {
 
   function formatDate(dateStr) {
     if (!dateStr) return '—'
-    const parts = dateStr.split('-')
+    const normalized = String(dateStr).includes('T')
+      ? String(dateStr).split('T')[0]
+      : String(dateStr)
+    const parts = normalized.split('-')
     if (parts.length < 3) return '—'
     const [y, m, d] = parts
     return `${d}/${m}/${y}`

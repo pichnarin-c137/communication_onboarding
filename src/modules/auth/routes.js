@@ -16,5 +16,11 @@ export default [
     name: 'GoogleCallback',
     component: () => import('@/modules/auth/views/GoogleCallbackView.vue'),
     meta: { layout: 'none' }
+  },
+  {
+    path: '/feedback/:token',
+    name: 'ClientFeedback',
+    component: () => import('@/modules/shared/views/FeedbackView.vue'),
+    meta: { layout: 'none' }
   }
 ]
