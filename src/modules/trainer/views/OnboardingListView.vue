@@ -64,7 +64,7 @@
               Client</th>
             <th
               class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">
-              System</th>
+              Due date</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[140px]">
               Progress</th>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
@@ -85,7 +85,7 @@
             </td>
             <td class="px-4 py-3 hidden sm:table-cell font-medium text-gray-900">{{ ob.client?.company_name || '—' }}
             </td>
-            <td class="px-4 py-3 hidden md:table-cell text-gray-600">{{ ob.system?.name || '—' }}</td>
+            <td class="px-4 py-3 hidden md:table-cell text-gray-600">{{ formatDate(ob.due_date) }}</td>
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
                 <div class="flex-1 bg-gray-100 rounded-full h-1.5 min-w-[80px]">
@@ -157,6 +157,7 @@ import { ChevronRightIcon, ClipboardDocumentListIcon, MagnifyingGlassIcon, XMark
 import { onboardingService } from '@/modules/shared/services/onboardingService.js'
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
+import { useDateTime } from '@/modules/shared/composables/useDateTime'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import { useSettingsStore } from '@/modules/shared/store/settings'
@@ -164,6 +165,7 @@ import { useSettingsStore } from '@/modules/shared/store/settings'
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const toast = useToast()
+const { formatDate } = useDateTime()
 const loading = ref(true)
 const onboardings = ref([])
 const meta = ref({ total: 0, per_page: 15, current_page: 1, last_page: 1, from: 0, to: 0 })

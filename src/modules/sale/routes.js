@@ -44,7 +44,7 @@ export default [
   {
     path: '/sales/onboarding/:id',
     name: 'OnboardingDetail',
-    component: () => import('@/modules/sale/views/OnboardingDetailView.vue'),
+    component: () => import('@/modules/trainer/views/OnboardingDetailView.vue'),
     meta: { layout: 'sales', title: 'Onboarding Detail', role: 'sale' }
   },
   {

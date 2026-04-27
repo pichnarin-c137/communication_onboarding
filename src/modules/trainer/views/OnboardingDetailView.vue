@@ -78,52 +78,63 @@
         <div class="flex items-center gap-2 shrink-0">
           <StatusBadge :status="ob.status" />
 
-          <!-- Resume from hold -->
+          <!-- Sale: Request Revision -->
           <button
-            v-if="ob.status === 'on_hold'"
-            @click="handleResume"
-            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+            v-if="isSaleUser && ob.status === 'in_progress'"
+            @click="showRevisionModal = true"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Resume
+            Request Revision
           </button>
 
-          <!-- Acknowledge & Resume -->
-          <button
-            v-if="ob.status === 'revision_requested'"
-            @click="handleAcknowledge"
-            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
-          >
-            Acknowledge &amp; Resume
-          </button>
-
-          <template v-if="ob.status === 'in_progress'">
-            <!-- Put On Hold -->
+          <!-- Trainer-only actions -->
+          <template v-if="!isSaleUser">
+            <!-- Resume from hold -->
             <button
-              @click="showHoldModal = true"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              v-if="ob.status === 'on_hold'"
+              @click="handleResume"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
             >
-              Put On Hold
+              Resume
             </button>
 
-            <button @click="refreshProgress" :disabled="refreshing"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors">
-              <ArrowPathIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshing }" />
-              {{ refreshing ? 'Refreshing...' : 'Refresh' }}
+            <!-- Acknowledge & Resume -->
+            <button
+              v-if="ob.status === 'revision_requested'"
+              @click="handleAcknowledge"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              Acknowledge &amp; Resume
             </button>
 
-            <div class="relative group">
-              <button @click="showCompleteModal = true" :disabled="!canComplete"
-                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-700 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">
-                <CheckCircleIcon class="w-3.5 h-3.5" />
-                Mark as Complete
-              </button>
-              <div
-                v-if="!canComplete"
-                class="absolute right-0 top-full mt-1 z-20 w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+            <template v-if="ob.status === 'in_progress'">
+              <button
+                @click="showHoldModal = true"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                {{ completeTooltip }}
+                Put On Hold
+              </button>
+
+              <button @click="refreshProgress" :disabled="refreshing"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                <ArrowPathIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshing }" />
+                {{ refreshing ? 'Refreshing...' : 'Refresh' }}
+              </button>
+
+              <div class="relative group">
+                <button @click="showCompleteModal = true" :disabled="!canComplete"
+                  class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-700 disabled:opacity-35 disabled:cursor-not-allowed transition-colors">
+                  <CheckCircleIcon class="w-3.5 h-3.5" />
+                  Mark as Complete
+                </button>
+                <div
+                  v-if="!canComplete"
+                  class="absolute right-0 top-full mt-1 z-20 w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                >
+                  {{ completeTooltip }}
+                </div>
               </div>
-            </div>
+            </template>
           </template>
         </div>
       </div>
@@ -266,16 +277,14 @@
             <h3 class="text-sm font-semibold text-gray-900">Company Information</h3>
           </div>
           <div class="flex items-center gap-2">
-            <!-- Patent: Upload if none, view if already uploaded -->
-            <template v-if="patentPreviewUrl">
-              <button @click="showPatentModal = true"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
-                <CheckCircleIcon class="w-3.5 h-3.5" />
-                Patent
-              </button>
-            </template>
-            <template v-else>
-              <label :class="isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'">
+            <!-- Patent: view button always shown if uploaded; upload only for trainer -->
+            <button v-if="patentPreviewUrl" @click="showPatentModal = true"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+              <CheckCircleIcon class="w-3.5 h-3.5" />
+              Patent
+            </button>
+            <template v-if="!isSaleUser">
+              <label v-if="!patentPreviewUrl" :class="isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'">
                 <input type="file" accept="image/*,.pdf" class="hidden" :disabled="ocrProcessing || isCompleted"
                   @change="handlePatentUpload" />
                 <span :class="[
@@ -288,13 +297,13 @@
                   {{ ocrProcessing ? 'Scanning...' : 'Upload Patent' }}
                 </span>
               </label>
+              <!-- Save Change -->
+              <button @click="saveCompanyInfo" :disabled="savingCompany || isReadOnly"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+                {{ savingCompany ? 'Saving...' : 'Save Change' }}
+              </button>
             </template>
-            <!-- Save Change -->
-            <button @click="saveCompanyInfo" :disabled="savingCompany || isReadOnly"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-              <ArrowDownTrayIcon class="w-3.5 h-3.5" />
-              {{ savingCompany ? 'Saving...' : 'Save Change' }}
-            </button>
           </div>
         </div>
 
@@ -303,14 +312,14 @@
             {{ companyError }}
           </div>
 
-          <!-- Company logo upload -->
+          <!-- Company logo -->
           <div class="flex flex-col items-center gap-2">
             <div
               class="w-24 h-24 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
               <img v-if="companyLogoPreview" :src="companyLogoPreview" class="w-full h-full object-cover" />
               <span v-else class="text-[10px] text-gray-400 text-center leading-tight px-2">Company<br />Logo</span>
             </div>
-            <label :class="isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'">
+            <label v-if="!isSaleUser" :class="isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'">
               <input type="file" accept="image/*" class="hidden" :disabled="isCompleted" @change="handleLogoUpload" />
               <span :class="[
                 'px-3 py-1 text-xs border rounded transition-colors',
@@ -327,13 +336,13 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Company Name</label>
-                <input v-model="companyForm.company_name" type="text" :disabled="hasPatent || isCompleted"
+                <input v-model="companyForm.company_name" type="text" :disabled="hasPatent || isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-gray-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Type of Business</label>
-                <select v-model="companyForm.business_type" :disabled="isCompleted"
+                <select v-model="companyForm.business_type" :disabled="isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors appearance-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20">
                   <option value="">Select an option</option>
                   <option v-for="bt in businessTypes" :key="bt.id" :value="bt.value || bt.id">
@@ -344,13 +353,13 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Owner's Name</label>
-                <input v-model="companyForm.owner_name" type="text" :disabled="hasPatent || isCompleted"
+                <input v-model="companyForm.owner_name" type="text" :disabled="hasPatent || isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Phone Number</label>
-                <input v-model="companyForm.phone" type="text" :disabled="isCompleted"
+                <input v-model="companyForm.phone" type="text" :disabled="isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
             </div>
@@ -361,14 +370,14 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">ឈ្មោះសហក្រាស</label>
-                <input v-model="companyForm.company_name_kh" type="text" :disabled="isCompleted"
+                <input v-model="companyForm.company_name_kh" type="text" :disabled="isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">ប្រភេទអាជីវកម្ម</label>
                 <!-- Same v-model as English so they always stay in sync -->
-                <select v-model="companyForm.business_type" :disabled="isCompleted"
+                <select v-model="companyForm.business_type" :disabled="isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors appearance-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20">
                   <option value="">Select an option</option>
                   <option v-for="bt in businessTypes" :key="bt.id" :value="bt.value || bt.id">
@@ -379,13 +388,13 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">ឈ្មោះម្ចាស់សហក្រាស</label>
-                <input v-model="companyForm.owner_name_kh" type="text" :disabled="isCompleted"
+                <input v-model="companyForm.owner_name_kh" type="text" :disabled="isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">អាសយដ្ឋានសហក្រាស</label>
-                <input v-model="companyForm.address_kh" type="text" :disabled="isCompleted"
+                <input v-model="companyForm.address_kh" type="text" :disabled="isCompleted || isSaleUser"
                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors bg-white focus:border-primary focus:ring-2 focus:ring-primary/20" />
               </div>
             </div>
@@ -406,7 +415,7 @@
                 <ChartBarIcon class="w-4 h-4 text-gray-500" />
                 <h3 class="text-sm font-semibold text-gray-900">System Analysis</h3>
               </div>
-              <button @click="saveAnalysis" :disabled="savingAnalysis || isReadOnly"
+              <button v-if="!isSaleUser" @click="saveAnalysis" :disabled="savingAnalysis || isReadOnly"
                 class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
                 {{ savingAnalysis ? 'Saving...' : 'Save' }}
               </button>
@@ -414,17 +423,17 @@
             <div class="divide-y divide-gray-50">
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Import Employees</span>
-                <input v-model.number="analysisForm.import_employee_count" type="number" min="0" :disabled="isCompleted"
+                <input v-model.number="analysisForm.import_employee_count" type="number" min="0" :disabled="isCompleted || isSaleUser"
                   class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Connected Apps</span>
-                <input v-model.number="analysisForm.connected_app_count" type="number" min="0" :disabled="isCompleted"
+                <input v-model.number="analysisForm.connected_app_count" type="number" min="0" :disabled="isCompleted || isSaleUser"
                   class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Mobile Profiles</span>
-                <input v-model.number="analysisForm.profile_mobile_count" type="number" min="0" :disabled="isCompleted"
+                <input v-model.number="analysisForm.profile_mobile_count" type="number" min="0" :disabled="isCompleted || isSaleUser"
                   class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
             </div>
@@ -443,25 +452,31 @@
                 No policies configured
               </div>
               <div v-for="p in ob.policies" :key="p.id" class="flex items-center gap-3 px-5 py-3">
-                <button v-if="!p.is_checked" @click="!isCompleted && checkPolicy(p.id)" :disabled="isCompleted"
-                  class="w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 transition-colors bg-white disabled:cursor-not-allowed"
-                  :class="isCompleted ? '' : 'hover:border-primary'"></button>
-                <button v-else @click="!isCompleted && uncheckPolicy(p.id)" :disabled="isCompleted"
-                  class="flex-shrink-0 transition-colors disabled:cursor-not-allowed"
-                  :class="isCompleted ? 'text-emerald-400' : 'text-emerald-500 hover:text-amber-500'" title="Uncheck policy">
-                  <CheckCircleIcon class="w-4 h-4" />
-                </button>
+                <template v-if="!isSaleUser">
+                  <button v-if="!p.is_checked" @click="!isCompleted && checkPolicy(p.id)" :disabled="isCompleted"
+                    class="w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 transition-colors bg-white disabled:cursor-not-allowed"
+                    :class="isCompleted ? '' : 'hover:border-primary'"></button>
+                  <button v-else @click="!isCompleted && uncheckPolicy(p.id)" :disabled="isCompleted"
+                    class="flex-shrink-0 transition-colors disabled:cursor-not-allowed"
+                    :class="isCompleted ? 'text-emerald-400' : 'text-emerald-500 hover:text-amber-500'" title="Uncheck policy">
+                    <CheckCircleIcon class="w-4 h-4" />
+                  </button>
+                </template>
+                <template v-else>
+                  <CheckCircleIcon v-if="p.is_checked" class="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <div v-else class="w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0" />
+                </template>
                 <span :class="['flex-1 text-sm', p.is_checked ? 'line-through text-gray-400' : 'text-gray-700']">
                   {{ p.policy_name }}
                 </span>
                 <span v-if="p.is_default" class="text-[10px] uppercase tracking-wider text-gray-400">default</span>
-                <button v-if="!p.is_default && !p.is_checked && !isCompleted" @click="promptRemovePolicy(p.id)"
+                <button v-if="!isSaleUser && !p.is_default && !p.is_checked && !isCompleted" @click="promptRemovePolicy(p.id)"
                   class="text-xs text-gray-400 hover:text-red-500 transition-colors">Remove</button>
               </div>
             </div>
 
             <!-- Add policy area -->
-            <div v-if="!isReadOnly" class="border-t border-gray-100 px-5 py-3">
+            <div v-if="!isReadOnly && !isSaleUser" class="border-t border-gray-100 px-5 py-3">
               <div v-if="showAddPolicy" class="flex gap-2">
                 <input v-model="newPolicyName" placeholder="Policy name..."
                   class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -508,8 +523,8 @@
           <div class="divide-y divide-gray-100">
             <div v-for="(lesson, slotIdx) in slotsForCurrentPath" :key="slotIdx">
 
-              <!-- Empty slot: click to pick from playlist -->
-              <div v-if="!lesson" @click="!isCompleted && openPlaylistPicker(slotIdx)"
+              <!-- Empty slot: trainer can click to upload; sale sees a read-only placeholder -->
+              <div v-if="!lesson && !isSaleUser" @click="!isCompleted && openPlaylistPicker(slotIdx)"
                 class="flex flex-col items-center justify-center py-8 gap-2 transition-colors"
                 :class="isCompleted ? 'cursor-not-allowed opacity-40' : 'cursor-pointer hover:bg-gray-50'">
                 <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -517,9 +532,18 @@
                 </div>
                 <span class="text-xs font-medium text-primary">Upload</span>
               </div>
+              <div v-else-if="!lesson && isSaleUser" class="flex items-center gap-3 px-5 py-4">
+                <div class="w-16 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center shrink-0">
+                  <VideoCameraIcon class="w-5 h-5 text-gray-300" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-medium text-gray-400">Slot {{ slotIdx + 1 }} — No video uploaded</p>
+                </div>
+                <span class="text-[10px] text-gray-300 shrink-0">Not sent</span>
+              </div>
 
               <!-- Filled slot -->
-              <div v-else class="px-5 py-4 flex items-center gap-3">
+              <div v-else-if="lesson" class="px-5 py-4 flex items-center gap-3">
                 <!-- Thumbnail -->
                 <div
                   class="w-16 h-10 bg-gray-100 rounded border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
@@ -548,6 +572,8 @@
                     class="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
                     <CheckCircleIcon class="w-3 h-3" /> Sent
                   </span>
+                  <span v-else-if="isSaleUser"
+                    class="text-[10px] text-gray-400 shrink-0">Not sent</span>
                   <template v-else-if="!isCompleted">
                     <button @click="promptSendLesson(lesson)"
                       class="px-2.5 py-1 text-xs font-medium text-primary border border-primary/30 rounded hover:bg-primary/5 transition-colors">Send</button>
@@ -561,7 +587,7 @@
           </div>
 
           <!-- Add More Lesson -->
-          <div v-if="!isReadOnly" class="border-t border-gray-100 px-5 py-3">
+          <div v-if="!isReadOnly && !isSaleUser" class="border-t border-gray-100 px-5 py-3">
             <button @click="extraEmptySlots++"
               class="text-xs font-medium text-primary hover:underline transition-colors">+
               Add More Lesson</button>
@@ -956,9 +982,41 @@
     <CycleHistoryDrawer
       :open="showCycleDrawer"
       :onboarding-id="ob?.id"
-      role="trainer"
+      :role="isSaleUser ? 'sale' : 'trainer'"
       @close="showCycleDrawer = false"
     />
+
+    <!-- Sale: Request Revision Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="isSaleUser && showRevisionModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div class="absolute inset-0 bg-black/40" @click="showRevisionModal = false" />
+          <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+            <h2 class="font-semibold text-gray-900 mb-1">Request Revision</h2>
+            <p class="text-sm text-gray-500 mb-4">Describe what needs to be corrected. The trainer will see this note.</p>
+            <textarea
+              v-model="revisionNote"
+              rows="4"
+              placeholder="Describe what needs to be revised..."
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none mb-4"
+            />
+            <div class="flex justify-end gap-2">
+              <button @click="showRevisionModal = false"
+                class="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button
+                :disabled="!revisionNote.trim() || revisionSubmitting"
+                @click="handleRequestRevision"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {{ revisionSubmitting ? 'Sending...' : 'Send Request' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -997,6 +1055,7 @@ import { businessTypeService } from '@/modules/shared/services/businessTypeServi
 import { useOCR } from '@/modules/shared/composables/useOCR.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import ConfirmModal from '@/modules/shared/components/ConfirmModal.vue'
@@ -1009,6 +1068,31 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { formatDate, formatDateTimeFromISO } = useDateTime()
+const authStore = useAuthStore()
+
+// When used by the sale route, everything is read-only except requesting revisions
+const isSaleUser = computed(() => authStore.isSales)
+
+// Sale: Request Revision
+const showRevisionModal = ref(false)
+const revisionNote = ref('')
+const revisionSubmitting = ref(false)
+
+async function handleRequestRevision() {
+  if (!revisionNote.value.trim()) return
+  revisionSubmitting.value = true
+  try {
+    await onboardingService.requestRevision(ob.value.id, revisionNote.value.trim())
+    showRevisionModal.value = false
+    revisionNote.value = ''
+    await load()
+    toast.success('Revision requested. The trainer has been notified.')
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to request revision.')
+  } finally {
+    revisionSubmitting.value = false
+  }
+}
 
 const LESSON_PATHS = [1, 2, 3]
 

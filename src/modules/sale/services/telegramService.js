@@ -5,6 +5,10 @@ export const telegramService = {
     const res = await api.post('/telegram/setup-token', { client_id: clientId })
     return res.data.data
   },
+  async getSetupToken(clientId) {
+    const res = await api.get('/telegram/setup-token', { params: { client_id: clientId } })
+    return res.data.data
+  },
   async listGroups(params) {
     const res = await api.get('/telegram/groups', { params })
     return res.data
