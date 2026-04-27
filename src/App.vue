@@ -145,7 +145,8 @@ const salesNavGroups = [
     label: 'Main',
     items: [
       { to: '/sales', label: 'Dashboard', icon: HomeIcon },
-{ to: '/sales/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
+      { to: '/sales/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
+      { to: '/sales/onboarding', label: 'Onboarding', icon: AcademicCapIcon },
       { to: '/sales/calendar', label: 'Calendar', icon: CalendarDaysIcon },
       {
         label: 'Reports',

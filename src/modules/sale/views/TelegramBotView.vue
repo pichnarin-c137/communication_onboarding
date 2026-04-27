@@ -70,22 +70,34 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            <tr v-for="group in filteredGroups" :key="group.id" class="hover:bg-gray-50 transition-colors">
-              <td class="px-4 py-3 font-medium text-gray-900">{{ group.group_name }}</td>
+            <tr
+              v-for="group in filteredGroups"
+              :key="group.id"
+              class="hover:bg-gray-50 transition-colors cursor-pointer"
+              @click="handleRowClick(group)"
+            >
+              <td class="px-4 py-3 font-medium text-gray-900">{{ getGroupName(group) }}</td>
               <td class="px-4 py-3 text-gray-600">{{ group.client_name ?? '—' }}</td>
               <td class="px-4 py-3">
-                <StatusBadge :status="group.bot_status" />
+                <StatusBadge :status="getGroupStatus(group)" />
               </td>
               <td class="px-4 py-3 text-gray-600">{{ group.language === 'km' ? 'ខ្មែរ' : 'English' }}</td>
               <td class="px-4 py-3 text-gray-500 text-xs">{{ group.connected_at ? formatDateTimeFromISO(group.connected_at) : '—' }}</td>
               <td class="px-4 py-3 text-right">
-                <button
-                  @click="router.push(`/sales/configurations/telegram-bot/${group.id}`)"
+                <button v-if="getGroupStatus(group) === 'connected' || getGroupStatus(group) === 'removed'"
+                  @click.stop="router.push(`/sales/configurations/telegram-bot/${group.id}`)"
                   class="px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
                 >
                   View
                 </button>
+                <button v-if="getGroupStatus(group) === 'pending'"
+                        @click.stop="openPendingTokenModal(group)"
+                        class="px-3 py-1.5 text-xs font-medium text-success border border-success/30 rounded-lg hover:bg-success/5 transition-colors"
+                >
+                  Pending
+                </button>
               </td>
+
             </tr>
           </tbody>
         </table>
@@ -132,14 +144,14 @@
         >
           <div class="bg-white rounded-lg shadow-md w-full max-w-md p-6 space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900">Generate Setup Token</h3>
+              <h3 class="text-lg font-semibold text-gray-900">{{ setupModalTitle }}</h3>
               <button @click="closeSetupModal" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <XMarkIcon class="w-5 h-5" />
               </button>
             </div>
 
             <!-- Client selector -->
-            <div>
+            <div v-if="!isPendingTokenView">
               <label class="block text-xs font-medium text-gray-700 mb-1.5">Select Client <span class="text-red-500">*</span></label>
               <AppSelect
                 v-model="selectedClientId"
@@ -149,6 +161,14 @@
                 :remote="true"
                 @search="onClientSearch"
               />
+            </div>
+
+            <div v-else class="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+              Pending Group: <span class="font-medium text-gray-800">{{ pendingGroupLabel }}</span>
+            </div>
+
+            <div v-if="generatingToken && !generatedToken" class="text-sm text-gray-500">
+              Loading setup token...
             </div>
 
             <!-- Generated token display -->
@@ -180,8 +200,14 @@
                     </button>
                   </div>
                 </div>
+                <p v-if="generatedToken.created === false" class="text-xs text-gray-500">
+                  Reused an existing active token.
+                </p>
+                <p v-else-if="generatedToken.created === true" class="text-xs text-gray-500">
+                  Generated a new token.
+                </p>
                 <p v-if="generatedToken.expires_at" class="text-xs text-amber-600">
-                  Expires: {{ formatDateTimeFromISO(generatedToken.expires_at) }}
+                  Expires: {{ formatTokenExpiry(generatedToken.expires_at) }}
                 </p>
               </div>
             </template>
@@ -250,23 +276,36 @@ const statusFilter = ref(null)
 
 const statusOptions = [
   { value: 'connected', label: 'Connected' },
+  { value: 'pending', label: 'Pending' },
   { value: 'removed', label: 'Removed' }
 ]
 
+function getGroupStatus(group) {
+  return group?.bot_status ?? group?.status ?? ''
+}
+
+function getGroupName(group) {
+  return group?.group_name ?? group?.name ?? '—'
+}
+
+function getGroupClientId(group) {
+  return group?.client_id ?? group?.client?.id ?? null
+}
+
 // Computed stats
-const connectedCount = computed(() => groups.value.filter(g => g.status === 'connected').length)
-const removedCount = computed(() => groups.value.filter(g => g.status === 'removed').length)
+const connectedCount = computed(() => groups.value.filter(g => getGroupStatus(g) === 'connected').length)
+const removedCount = computed(() => groups.value.filter(g => getGroupStatus(g) === 'removed').length)
 
 // Filtered groups (client-side)
 const filteredGroups = computed(() => {
   let list = groups.value
   if (statusFilter.value) {
-    list = list.filter(g => g.status === statusFilter.value)
+    list = list.filter(g => getGroupStatus(g) === statusFilter.value)
   }
   const q = searchQuery.value.trim().toLowerCase()
   if (q) {
     list = list.filter(g => {
-      const name = (g.name ?? '').toLowerCase()
+      const name = getGroupName(g).toLowerCase()
       const client = (g.client?.company_name ?? g.client_name ?? '').toLowerCase()
       return name.includes(q) || client.includes(q)
     })
@@ -282,6 +321,16 @@ const clientsLoading = ref(false)
 const generatedToken = ref(null)
 const generatingToken = ref(false)
 const tokenError = ref(null)
+const isPendingTokenView = ref(false)
+const pendingGroup = ref(null)
+
+const setupModalTitle = computed(() =>
+  isPendingTokenView.value ? 'Pending Setup Token' : 'Generate Setup Token'
+)
+
+const pendingGroupLabel = computed(() =>
+  pendingGroup.value ? getGroupName(pendingGroup.value) : '—'
+)
 
 async function loadGroups() {
   loading.value = true
@@ -325,6 +374,8 @@ function onClientSearch(q) {
 
 function openSetupModal() {
   showSetupModal.value = true
+  isPendingTokenView.value = false
+  pendingGroup.value = null
   generatedToken.value = null
   tokenError.value = null
   selectedClientId.value = null
@@ -333,9 +384,43 @@ function openSetupModal() {
 
 function closeSetupModal() {
   showSetupModal.value = false
+  isPendingTokenView.value = false
+  pendingGroup.value = null
   generatedToken.value = null
   tokenError.value = null
   selectedClientId.value = null
+}
+
+function handleRowClick(group) {
+  if (getGroupStatus(group) === 'pending') {
+    openPendingTokenModal(group)
+    return
+  }
+  router.push(`/sales/configurations/telegram-bot/${group.id}`)
+}
+
+async function openPendingTokenModal(group) {
+  const clientId = getGroupClientId(group)
+  if (!clientId) {
+    toastError('Client is missing for this pending group.')
+    return
+  }
+
+  showSetupModal.value = true
+  isPendingTokenView.value = true
+  pendingGroup.value = group
+  selectedClientId.value = clientId
+  generatedToken.value = null
+  tokenError.value = null
+  generatingToken.value = true
+
+  try {
+    generatedToken.value = await telegramService.getSetupToken(clientId)
+  } catch (err) {
+    tokenError.value = extractErrorMessage(err)
+  } finally {
+    generatingToken.value = false
+  }
 }
 
 async function handleGenerateToken() {
@@ -344,11 +429,19 @@ async function handleGenerateToken() {
   tokenError.value = null
   try {
     generatedToken.value = await telegramService.generateSetupToken(selectedClientId.value)
+    // Refresh only the Telegram data list instead of reloading the whole page.
+    await Promise.all([loadGroups(), loadTotalMessages()])
   } catch (err) {
     tokenError.value = extractErrorMessage(err)
   } finally {
     generatingToken.value = false
   }
+}
+
+function formatTokenExpiry(value) {
+  if (!value) return '—'
+  const normalized = typeof value === 'string' && value.includes(' ') ? value.replace(' ', 'T') : value
+  return formatDateTimeFromISO(normalized)
 }
 
 async function copyToken(text) {
@@ -373,6 +466,6 @@ async function copyToken(text) {
 
 onMounted(async () => {
   await loadGroups()
-  loadTotalMessages()
+  await loadTotalMessages()
 })
 </script>

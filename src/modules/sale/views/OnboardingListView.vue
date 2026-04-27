@@ -20,10 +20,10 @@
         <button v-if="hasActiveFilters" @click="resetFilters"
           class="text-xs text-primary hover:underline">Reset all</button>
       </div>
-      <!-- Row 1: Status + Search -->
-      <div class="flex flex-col sm:flex-row gap-3">
+      <!-- Row 1: Status + Trainer + Search -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <select v-model="statusFilter" @change="load(1)"
-          class="sm:w-44 px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
           <option value="">All Statuses</option>
           <option value="in_progress">In Progress</option>
           <option value="on_hold">On Hold</option>
@@ -31,7 +31,20 @@
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
-        <div class="relative flex-1 min-w-0">
+
+        <AppSelect
+          v-model="trainerFilter"
+          :options="trainerOptions"
+          :loading="saleStore.loadingTrainers"
+          placeholder="All Trainers"
+          search-placeholder="Search trainers..."
+          empty-text="No trainers found"
+          clearable
+          remote
+          @search="onTrainerSearch"
+        />
+
+        <div class="relative min-w-0">
           <MagnifyingGlassIcon
             class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input v-model="searchQuery" @input="onSearchInput" @keyup.enter="load(1)" type="text"
@@ -43,6 +56,7 @@
           </button>
         </div>
       </div>
+
       <!-- Row 2: Date range -->
       <div class="flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 py-2 bg-white w-full sm:w-80">
         <CalendarDaysIcon class="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -123,36 +137,49 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronRightIcon, ClipboardDocumentListIcon, MagnifyingGlassIcon, XMarkIcon, ArrowDownTrayIcon, CalendarDaysIcon } from '@heroicons/vue/24/outline'
 import { onboardingService } from '@/modules/shared/services/onboardingService.js'
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
+import AppSelect from '@/modules/shared/components/AppSelect.vue'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import { useSettingsStore } from '@/modules/shared/store/settings'
+import { useSaleStore } from '@/modules/sale/store/sale.js'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
+const saleStore = useSaleStore()
 
 const loading = ref(true)
 const onboardings = ref([])
 const meta = ref({ total: 0, per_page: 15, current_page: 1, last_page: 1, from: 0, to: 0 })
 const statusFilter = ref('')
+const trainerFilter = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
 const searchQuery = ref('')
 let searchDebounceTimer = null
 
-const hasActiveFilters = computed(() =>
-  !!statusFilter.value || !!dateFrom.value || !!dateTo.value || !!searchQuery.value
+const trainerOptions = computed(() =>
+  saleStore.trainers.map(t => ({ value: String(t.id), label: `${t.first_name} ${t.last_name}` }))
 )
+
+const hasActiveFilters = computed(() =>
+  !!statusFilter.value || !!trainerFilter.value || !!dateFrom.value || !!dateTo.value || !!searchQuery.value
+)
+
+async function onTrainerSearch(query) {
+  await saleStore.fetchTrainers(query)
+}
 
 async function load(page = 1) {
   loading.value = true
   try {
     const params = { page, per_page: settingsStore.settings?.items_per_page || 15 }
     if (statusFilter.value) params.status = statusFilter.value
+    if (trainerFilter.value) params.trainer_id = trainerFilter.value
     if (dateFrom.value) params.date_from = dateFrom.value
     if (dateTo.value) params.date_to = dateTo.value
     if (searchQuery.value.trim()) params.search = searchQuery.value.trim()
@@ -168,6 +195,7 @@ async function load(page = 1) {
 
 function resetFilters() {
   statusFilter.value = ''
+  trainerFilter.value = ''
   dateFrom.value = ''
   dateTo.value = ''
   searchQuery.value = ''
@@ -175,6 +203,8 @@ function resetFilters() {
 }
 
 function goToPage(page) { load(page) }
+
+watch(trainerFilter, () => load(1))
 
 function onSearchInput() {
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
@@ -204,6 +234,9 @@ onBeforeUnmount(() => { if (searchDebounceTimer) clearTimeout(searchDebounceTime
 
 onMounted(async () => {
   if (!settingsStore.settings) await settingsStore.fetchSettings()
-  load()
+  await Promise.all([
+    saleStore.fetchTrainers(),
+    load()
+  ])
 })
 </script>

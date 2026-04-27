@@ -33,6 +33,7 @@ export interface UserProfile {
   nationality?: string
   is_suspended?: boolean
   created_at?: string
+  update_at?: string
 }
 
 //  API Response Wrappers

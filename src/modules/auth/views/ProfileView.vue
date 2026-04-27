@@ -140,12 +140,12 @@
             </div>
             <div>
               <p class="text-sm font-medium text-gray-900">Password</p>
-              <p class="text-xs text-gray-500">Last changed: never</p>
+              <p class="text-xs text-gray-500">Last changed: {{ formatOffsetDateTime(authStore.user?.updated_at) }}</p>
             </div>
           </div>
           <button
             @click="showPasswordModal = true"
-            class="px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+            class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Change password
           </button>
@@ -305,9 +305,9 @@
     <!-- Change Password Modal -->
     <Transition name="fade">
       <div v-if="showPasswordModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" @click="closePasswordModal"></div>
-        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden z-10 border border-gray-100">
-          <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+        <div class="absolute inset-0 bg-black/40" @click="closePasswordModal"></div>
+        <div class="relative bg-white rounded-lg shadow-md w-full max-w-md overflow-hidden z-10 border border-gray-200">
+          <div class="px-6 py-4 border-b border-gray-100 bg-white">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <h3 class="text-lg font-semibold text-gray-900">Change Password</h3>
@@ -325,9 +325,9 @@
           </div>
 
           <div class="px-6 py-5">
-            <div class="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-              <p class="font-medium">Password tips</p>
-              <p class="mt-1 text-blue-700/90">Use at least 8 characters and avoid reusing old passwords.</p>
+            <div class="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              <p class="font-medium text-gray-700">Security note</p>
+              <p class="mt-1">Use at least 8 characters and avoid reusing old passwords.</p>
             </div>
 
             <div v-if="passwordError" class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
@@ -342,7 +342,7 @@
                   <input
                     v-model="passwordForm.current"
                     :type="showCurrentPassword ? 'text' : 'password'"
-                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-colors"
                     placeholder="Enter your current password"
                     required
                   />
@@ -363,7 +363,7 @@
                   <input
                     v-model="passwordForm.new"
                     :type="showNewPassword ? 'text' : 'password'"
-                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-colors"
                     placeholder="Create a new password"
                     required
                     minlength="8"
@@ -386,7 +386,7 @@
                   <input
                     v-model="passwordForm.confirm"
                     :type="showConfirmPassword ? 'text' : 'password'"
-                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                    class="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-colors"
                     placeholder="Re-enter new password"
                     required
                   />
@@ -405,14 +405,14 @@
                 <button
                   type="button"
                   @click="closePasswordModal"
-                  class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                  class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   :disabled="passwordChanging"
-                  class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <svg v-if="passwordChanging" class="animate-spin h-4 w-4" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
@@ -444,6 +444,7 @@ import {
 import api from '@core/services/api'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useToast } from '@/modules/shared/composables/useToast.js'
+import { useDateTime } from '@/modules/shared/composables/useDateTime'
 
 const ENDPOINTS = {
   PROFILE: import.meta.env.VITE_USER_PROFILE,
@@ -456,6 +457,8 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
+
+const { formatOffsetDateTime } = useDateTime()
 
 const profileForm = ref({
   first_name: authStore.user?.first_name ?? '',

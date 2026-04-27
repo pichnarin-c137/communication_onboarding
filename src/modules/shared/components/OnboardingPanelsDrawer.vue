@@ -184,8 +184,14 @@
                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium" :class="rev.acknowledged_at ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
                       {{ rev.acknowledged_at ? 'Acknowledged' : 'Pending' }}
                     </span>
+                    <span v-if="rev.requested_by" class="text-xs text-gray-400">
+                      by {{ rev.requested_by.first_name }} {{ rev.requested_by.last_name }}
+                    </span>
                   </div>
                   <p class="text-sm text-gray-800 leading-relaxed">{{ rev.note }}</p>
+                  <p v-if="rev.acknowledged_at && rev.acknowledged_by" class="text-xs text-gray-400 mt-1">
+                    Acknowledged by {{ rev.acknowledged_by.first_name }} {{ rev.acknowledged_by.last_name }} · {{ formatDateTimeFromISO(rev.acknowledged_at) }}
+                  </p>
                 </li>
               </ol>
             </template>

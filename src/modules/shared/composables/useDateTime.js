@@ -82,6 +82,22 @@ export function useDateTime() {
     return `${datePart}, ${timePart}`
   }
 
+  // Handles ISO 8601 strings with timezone offset, e.g. "2026-04-21T14:36:31+07:00"
+  // Output: "21/04/2026, 02:36 PM"
+  function formatOffsetDateTime(isoStr) {
+    if (!isoStr) return '—'
+    const d = new Date(isoStr)
+    if (isNaN(d.getTime())) return '—'
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    const h = d.getHours()
+    const min = String(d.getMinutes()).padStart(2, '0')
+    const period = h >= 12 ? 'PM' : 'AM'
+    const hour = String(h % 12 || 12).padStart(2, '0')
+    return `${day}/${month}/${year}, ${hour}:${min} ${period}`
+  }
+
   return {
     formatDate,
     formatDateFull,
@@ -89,6 +105,7 @@ export function useDateTime() {
     formatDateShort,
     formatTime,
     formatTimeFromISO,
-    formatDateTimeFromISO
+    formatDateTimeFromISO,
+    formatOffsetDateTime
   }
 }

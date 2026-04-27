@@ -2,9 +2,9 @@
   <div class="space-y-0 lg:space-y-4 mt-3">
     <div class="flex flex-col lg:flex-row gap-4 min-h-0">
       <!-- Appointment sidebar (month view only) -->
-      <div v-if="isMonthView" class="w-full lg:w-60 xl:w-65 flex-shrink-0">
-        <AppointmentSidebar />
-      </div>
+<!--      <div v-if="isMonthView" class="w-full lg:w-60 xl:w-65 flex-shrink-0">-->
+<!--        <AppointmentSidebar />-->
+<!--      </div>-->
 
       <!-- Calendar + day list -->
       <div class="flex-1 min-w-0 space-y-1">

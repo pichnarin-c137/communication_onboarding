@@ -253,6 +253,7 @@ import { telegramService } from '@/modules/sale/services/telegramService.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import { extractErrorMessage } from '@core/services/error.handler'
+import { useSettingsStore } from '@/modules/shared/store/settings'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import AppSelect from '@/modules/shared/components/AppSelect.vue'
@@ -260,6 +261,7 @@ import ConfirmModal from '@/modules/shared/components/ConfirmModal.vue'
 
 const route = useRoute()
 const router = useRouter()
+const settingsStore = useSettingsStore()
 const { success, error: toastError } = useToast()
 const { formatDateTimeFromISO } = useDateTime()
 
@@ -327,7 +329,7 @@ async function loadMessages(page = 1) {
     const params = {
       telegram_group_id: route.params.id,
       page,
-      per_page: 10
+      per_page: settingsStore.settings?.items_per_page || 15
     }
     if (msgStatusFilter.value) params.status = msgStatusFilter.value
     if (msgTypeFilter.value) params.message_type = msgTypeFilter.value
@@ -398,6 +400,7 @@ async function handleReconnect() {
 }
 
 onMounted(async () => {
+  if (!settingsStore.settings) await settingsStore.fetchSettings()
   await loadGroup()
   loadMessages(1)
 })

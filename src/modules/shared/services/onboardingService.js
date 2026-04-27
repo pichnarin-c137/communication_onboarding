@@ -139,7 +139,6 @@ export const onboardingService = {
   // Scenario 1 — Linked Sessions
   async getLinkedSessions(onboardingId) {
     const res = await api.get(`/onboarding/${onboardingId}/appointments`)
-    console.log('Linked sessions:', res.data.data)
     return res.data.data
   },
 
