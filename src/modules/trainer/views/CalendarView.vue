@@ -41,6 +41,9 @@ const isMonthView = computed(() => calendarStore.currentView === 'dayGridMonth')
 function onApiReady(api) { calendarApi.value = api }
 
 onMounted(async () => {
-  await Promise.all([eventStore.loadEvents(), eventStore.loadSidebar()])
+  const params = calendarStore.selectedTrainerId != null
+    ? { trainer_id: calendarStore.selectedTrainerId }
+    : {}
+  await Promise.all([eventStore.loadEvents(params), eventStore.loadSidebar(params)])
 })
 </script>

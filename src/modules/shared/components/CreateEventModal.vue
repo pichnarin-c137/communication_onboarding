@@ -134,12 +134,13 @@
 import { ref, reactive, watch } from 'vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useCalendarStore } from '@/modules/shared/store/calendar.js'
 import { useEventStore } from '@/modules/shared/store/events.js'
 import { saleService } from '@/modules/sale/services/saleService.js'
-import { trainerService } from '@/modules/trainer/services/trainerService.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
 
 const authStore = useAuthStore()
+const calendarStore = useCalendarStore()
 const eventStore = useEventStore()
 const toast = useToast()
 
@@ -194,7 +195,7 @@ function resetForm() {
     appointment_type: 'training',
     location_type: 'physical',
     client_id: '',
-    trainer_id: '',
+    trainer_id: calendarStore.selectedTrainerId != null ? calendarStore.selectedTrainerId : '',
     scheduled_date: defaults.date || today,
     scheduled_start_time: times.startTime,
     scheduled_end_time: times.endTime,
@@ -249,10 +250,18 @@ async function submit() {
 
     // Both services use getAppointments but only saleService has createAppointment
     // Use saleService for creation regardless (same endpoint POST /appointments)
-    await saleService.createAppointment(payload)
+    const response = await saleService.createAppointment(payload)
+    if (calendarStore.selectedTrainerId == null) {
+      const createdTrainerId = response?.data?.trainer_id ?? response?.trainer_id ?? payload.trainer_id ?? null
+      if (createdTrainerId != null) {
+        calendarStore.setTrainerFilter(createdTrainerId)
+      }
+    }
     toast.success('Appointment created!')
     eventStore.closeModals()
-    await eventStore.refresh()
+    const trainerId = calendarStore.selectedTrainerId
+    const params = trainerId != null ? { trainer_id: trainerId } : {}
+    await Promise.all([eventStore.loadEvents(params), eventStore.loadSidebar(params)])
   } catch (err) {
     error.value = err.response?.data?.message || 'Failed to create appointment.'
   } finally {

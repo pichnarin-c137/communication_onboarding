@@ -6,11 +6,20 @@
         <h1 class="text-2xl font-bold text-gray-900">Onboarding</h1>
         <p class="text-sm text-gray-500 mt-0.5">Track onboarding progress for completed training appointments</p>
       </div>
-      <button @click="exportCSV"
-        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-        <ArrowDownTrayIcon class="w-4 h-4" />
-        Export Excel
-      </button>
+      <div class="flex items-center gap-2">
+        <ColumnsToggle
+          :all-columns="allColumns"
+          :hidden-count="hiddenCount"
+          :is-visible="isVisible"
+          @toggle="toggleColumn"
+          @reset="resetColumns"
+        />
+        <button @click="exportCSV"
+          class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <ArrowDownTrayIcon class="w-4 h-4" />
+          Export Excel
+        </button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -82,10 +91,10 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Client</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">System</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progress</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th v-if="isVisible('client')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
+            <th v-if="isVisible('system')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">System</th>
+            <th v-if="isVisible('progress')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progress</th>
+            <th v-if="isVisible('status')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -104,9 +113,9 @@
                 </span>
               </p>
             </td>
-            <td class="px-4 py-3 hidden sm:table-cell text-gray-600">{{ ob.client?.company_name || '—' }}</td>
-            <td class="px-4 py-3 hidden md:table-cell text-gray-600">{{ ob.system?.name || '—' }}</td>
-            <td class="px-4 py-3">
+            <td v-if="isVisible('client')" class="px-4 py-3 text-gray-600">{{ ob.client?.company_name || '—' }}</td>
+            <td v-if="isVisible('system')" class="px-4 py-3 text-gray-600">{{ ob.system?.name || '—' }}</td>
+            <td v-if="isVisible('progress')" class="px-4 py-3">
               <div class="flex items-center gap-2">
                 <div class="w-24 bg-gray-100 rounded-full h-1.5 hidden sm:block">
                   <div class="bg-primary h-1.5 rounded-full" :style="{ width: `${ob.progress_percentage}%` }"></div>
@@ -114,7 +123,7 @@
                 <span class="text-xs font-semibold text-gray-700">{{ Math.round(ob.progress_percentage) }}%</span>
               </div>
             </td>
-            <td class="px-4 py-3"><StatusBadge :status="ob.status" /></td>
+            <td v-if="isVisible('status')" class="px-4 py-3"><StatusBadge :status="ob.status" /></td>
             <td class="px-4 py-3 text-right">
               <ChevronRightIcon class="w-4 h-4 text-gray-400" />
             </td>
@@ -142,15 +151,25 @@ import { useRouter } from 'vue-router'
 import { ChevronRightIcon, ClipboardDocumentListIcon, MagnifyingGlassIcon, XMarkIcon, ArrowDownTrayIcon, CalendarDaysIcon } from '@heroicons/vue/24/outline'
 import { onboardingService } from '@/modules/shared/services/onboardingService.js'
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
+import { useTableColumns } from '@/modules/shared/composables/useTableColumns.js'
 import AppSelect from '@/modules/shared/components/AppSelect.vue'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
+import ColumnsToggle from '@/modules/shared/components/ColumnsToggle.vue'
 import { useSettingsStore } from '@/modules/shared/store/settings'
 import { useSaleStore } from '@/modules/sale/store/sale.js'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const saleStore = useSaleStore()
+
+const allColumns = [
+  { key: 'client', label: 'Client' },
+  { key: 'system', label: 'System' },
+  { key: 'progress', label: 'Progress' },
+  { key: 'status', label: 'Status' },
+]
+const { isVisible, toggleColumn, resetColumns, hiddenCount } = useTableColumns('sale-onboarding', allColumns)
 
 const loading = ref(true)
 const onboardings = ref([])

@@ -145,33 +145,33 @@
         </div>
 
         <!-- Theme -->
-        <div class="px-6 py-5">
-          <label class="block text-sm font-medium text-gray-700 mb-3">Theme</label>
-          <div class="flex gap-3">
-            <button
-              type="button"
-              @click="form.theme = 'light'"
-              class="flex-1 flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all"
-              :class="form.theme === 'light'
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-gray-200 text-gray-500 hover:border-gray-300'"
-            >
-              <SunIcon class="w-5 h-5" />
-              <span class="text-sm font-medium">Light</span>
-            </button>
-            <button
-              type="button"
-              @click="form.theme = 'dark'"
-              class="flex-1 flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all"
-              :class="form.theme === 'dark'
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-gray-200 text-gray-500 hover:border-gray-300'"
-            >
-              <MoonIcon class="w-5 h-5" />
-              <span class="text-sm font-medium">Dark</span>
-            </button>
-          </div>
-        </div>
+<!--        <div class="px-6 py-5">-->
+<!--          <label class="block text-sm font-medium text-gray-700 mb-3">Theme</label>-->
+<!--          <div class="flex gap-3">-->
+<!--            <button-->
+<!--              type="button"-->
+<!--              @click="form.theme = 'light'"-->
+<!--              class="flex-1 flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all"-->
+<!--              :class="form.theme === 'light'-->
+<!--                ? 'border-primary bg-primary/5 text-primary'-->
+<!--                : 'border-gray-200 text-gray-500 hover:border-gray-300'"-->
+<!--            >-->
+<!--              <SunIcon class="w-5 h-5" />-->
+<!--              <span class="text-sm font-medium">Light</span>-->
+<!--            </button>-->
+<!--            <button-->
+<!--              type="button"-->
+<!--              @click="form.theme = 'dark'"-->
+<!--              class="flex-1 flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all"-->
+<!--              :class="form.theme === 'dark'-->
+<!--                ? 'border-primary bg-primary/5 text-primary'-->
+<!--                : 'border-gray-200 text-gray-500 hover:border-gray-300'"-->
+<!--            >-->
+<!--              <MoonIcon class="w-5 h-5" />-->
+<!--              <span class="text-sm font-medium">Dark</span>-->
+<!--            </button>-->
+<!--          </div>-->
+<!--        </div>-->
 
         <!-- Items per page -->
         <div class="px-6 py-5">
@@ -191,6 +191,36 @@
           <div class="flex justify-between text-xs text-gray-400 mt-1">
             <span>5</span>
             <span>100</span>
+          </div>
+        </div>
+
+        <!-- Display Density -->
+        <div class="px-6 py-5 border-t border-gray-100">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Display Density</label>
+          <p class="text-xs text-gray-500 mb-3">Controls table and card padding. Applied instantly — no save needed.</p>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              @click="uiPrefs.setDensity('comfortable')"
+              class="flex-1 flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all text-sm font-medium"
+              :class="uiPrefs.density === 'comfortable'
+                ? 'border-primary bg-primary/5 text-primary'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+            >
+              <ViewColumnsIcon class="w-5 h-5" />
+              Comfortable
+            </button>
+            <button
+              type="button"
+              @click="uiPrefs.setDensity('compact')"
+              class="flex-1 flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all text-sm font-medium"
+              :class="uiPrefs.density === 'compact'
+                ? 'border-primary bg-primary/5 text-primary'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'"
+            >
+              <Bars3Icon class="w-5 h-5" />
+              Compact
+            </button>
           </div>
         </div>
       </div>
@@ -287,15 +317,20 @@ import {
   MoonIcon,
   InformationCircleIcon,
   ExclamationCircleIcon,
+  ViewColumnsIcon,
+  Bars3Icon,
 } from '@heroicons/vue/24/outline'
 
 import { useSettingsStore } from '@/modules/shared/store/settings'
+import { useUiPreferences } from '@/modules/shared/store/uiPreferences'
 import { useToast } from '@/modules/shared/composables/useToast'
+import { i18n } from '@/core/i18n/index.js'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import AppTimePicker from '@/modules/shared/components/AppTimePicker.vue'
 import AppButton from '@/modules/shared/components/AppButton.vue'
 
 const store = useSettingsStore()
+const uiPrefs = useUiPreferences()
 const { success, error: toastError } = useToast()
 
 const DEFAULTS = {
@@ -335,7 +370,6 @@ const hasChanges = computed(() => {
 })
 
 async function save() {
-  // Build patch with only changed fields
   const patch = {}
   Object.keys(DEFAULTS).forEach((k) => {
     if (form[k] !== original.value[k]) patch[k] = form[k]
@@ -344,6 +378,10 @@ async function save() {
 
   const ok = await store.saveSettings(patch)
   if (ok) {
+    if (patch.language) {
+      i18n.global.locale.value = patch.language
+      localStorage.setItem('coms_locale', patch.language)
+    }
     success('Settings saved successfully.')
   } else {
     toastError(store.error || 'Failed to save settings.')

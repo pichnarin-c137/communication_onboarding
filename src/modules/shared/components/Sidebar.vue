@@ -68,7 +68,7 @@
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50',
                       !showLabels ? 'justify-center' : ''
                     ]"
-                    @click="toggleDropdown(item.label)"
+                    @click="handleParentClick(item)"
                   >
                     <component :is="item.icon" class="w-5 h-5 flex-shrink-0" />
                     <span v-if="showLabels" class="flex-1 text-left truncate">{{ item.label }}</span>
@@ -147,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   XMarkIcon,
@@ -167,7 +167,7 @@ const props = defineProps({
   homeRoute: { type: String, default: '/' }
 })
 
-defineEmits(['close', 'toggle-collapse'])
+const emit = defineEmits(['close', 'toggle-collapse'])
 
 const route = useRoute()
 const router = useRouter()
@@ -178,6 +178,30 @@ const openDropdowns = reactive({})
 function toggleDropdown(label) {
   openDropdowns[label] = !openDropdowns[label]
 }
+
+// Auto-open the parent group whose child matches the current route
+function syncDropdownsToRoute() {
+  for (const group of props.navGroups) {
+    for (const item of group.items) {
+      if (item.children && item.children.some(child => isActive(child.to))) {
+        openDropdowns[item.label] = true
+      }
+    }
+  }
+}
+
+// When sidebar is icon-only and user clicks a parent: expand sidebar then open its dropdown
+function handleParentClick(item) {
+  if (!showLabels.value) {
+    emit('toggle-collapse')
+    nextTick(() => { openDropdowns[item.label] = true })
+    return
+  }
+  toggleDropdown(item.label)
+}
+
+onMounted(syncDropdownsToRoute)
+watch(() => route.path, syncDropdownsToRoute)
 
 function isChildActive(children) {
   return children.some(child => isActive(child.to))

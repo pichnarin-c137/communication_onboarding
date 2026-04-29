@@ -40,7 +40,7 @@
         </nav>
       </div>
 
-      <!-- Right: notification + user + mobile hamburger -->
+      <!-- Right: notification + quick settings + user + mobile hamburger -->
       <div class="flex items-center gap-1 px-3 sm:px-4">
 
         <!-- Notification bell -->
@@ -153,10 +153,75 @@
           </Transition>
         </div>
 
+        <!-- Quick Settings: language + density -->
+        <div class="relative">
+          <button
+            @click="toggleQuickSettings"
+            :class="[
+              'p-2 rounded-lg transition-colors',
+              showQuickSettings ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            ]"
+          >
+            <Cog6ToothIcon class="w-5 h-5" />
+          </button>
+
+          <Transition name="slide-down">
+            <div
+              v-if="showQuickSettings"
+              class="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-md border border-gray-200 z-50 py-3"
+              @click.stop
+            >
+              <!-- Language -->
+              <div class="px-3">
+                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Language</p>
+                <div class="flex gap-1.5">
+                  <button
+                    @click="setLocale('en')"
+                    :class="currentLocale === 'en'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+                  >EN</button>
+                  <button
+                    @click="setLocale('km')"
+                    :class="currentLocale === 'km'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+                  >ខ្មែរ</button>
+                </div>
+              </div>
+
+              <div class="my-3 border-t border-gray-100"></div>
+
+              <!-- Density -->
+              <div class="px-3">
+                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Density</p>
+                <div class="flex gap-1.5">
+                  <button
+                    @click="uiPrefs.setDensity('comfortable')"
+                    :class="uiPrefs.density === 'comfortable'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+                  >Default</button>
+                  <button
+                    @click="uiPrefs.setDensity('compact')"
+                    :class="uiPrefs.density === 'compact'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                    class="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors"
+                  >Compact</button>
+                </div>
+              </div>
+            </div>
+          </Transition>
+        </div>
+
         <!-- User menu -->
         <div class="relative">
           <button
-            @click="showUserMenu = !showUserMenu"
+            @click="showUserMenu = !showUserMenu; showNotifications = false; showQuickSettings = false"
             class="flex items-center gap-2 pl-1 pr-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <Avatar :name="userDisplayName" size="sm" />
@@ -208,9 +273,9 @@
 
     <!-- Click-outside dismiss overlay (below header) -->
     <div
-      v-if="showUserMenu || showNotifications"
+      v-if="showUserMenu || showNotifications || showQuickSettings"
       class="fixed inset-0 z-40"
-      @click="showUserMenu = false; showNotifications = false"
+      @click="showUserMenu = false; showNotifications = false; showQuickSettings = false"
     ></div>
   </header>
 </template>
@@ -236,10 +301,13 @@ import {
   TrophyIcon,
   StarIcon,
   MapPinIcon,
+  Cog6ToothIcon,
 } from '@heroicons/vue/24/outline'
 import Avatar from './Avatar.vue'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useNotificationStore } from '@/modules/shared/store/notifications.js'
+import { useUiPreferences } from '@/modules/shared/store/uiPreferences.js'
+import { i18n } from '@/core/i18n/index.js'
 
 const props = defineProps({
   user: { type: Object, default: null },
@@ -254,9 +322,24 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const uiPrefs = useUiPreferences()
 
 const showUserMenu = ref(false)
 const showNotifications = ref(false)
+const showQuickSettings = ref(false)
+
+const currentLocale = computed(() => i18n.global.locale.value)
+
+function setLocale(lang) {
+  i18n.global.locale.value = lang
+  localStorage.setItem('coms_locale', lang)
+}
+
+function toggleQuickSettings() {
+  showQuickSettings.value = !showQuickSettings.value
+  showUserMenu.value = false
+  showNotifications.value = false
+}
 
 const homeRoute = computed(() => props.role === 'trainer' ? '/trainer' : '/sales')
 const profileRoute = computed(() => props.role === 'trainer' ? '/trainer/profile' : '/sales/profile')
@@ -347,6 +430,7 @@ function isActive(path) {
 async function toggleNotifications() {
   showNotifications.value = !showNotifications.value
   showUserMenu.value = false
+  showQuickSettings.value = false
   if (showNotifications.value) {
     await notificationStore.fetchNotifications()
   }

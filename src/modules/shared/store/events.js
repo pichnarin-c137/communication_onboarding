@@ -62,7 +62,7 @@ export const useEventStore = defineStore('events', {
     filteredEvents(state) {
       const calendarStore = useCalendarStore()
       let result = [...state.events]
-      if (calendarStore.selectedTrainerId) {
+      if (calendarStore.selectedTrainerId != null) {
         result = result.filter(e => e.trainerId === calendarStore.selectedTrainerId)
       }
       return result
@@ -100,7 +100,11 @@ export const useEventStore = defineStore('events', {
 
     // Refresh both calendar events and sidebar after any mutation
     async refresh() {
-      await Promise.all([this.loadEvents(), this.loadSidebar()])
+      const calendarStore = useCalendarStore()
+      const params = calendarStore.selectedTrainerId != null
+        ? { trainer_id: calendarStore.selectedTrainerId }
+        : {}
+      await Promise.all([this.loadEvents(params), this.loadSidebar(params)])
     },
 
     // Modal management

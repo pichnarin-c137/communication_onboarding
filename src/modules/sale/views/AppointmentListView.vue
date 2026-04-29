@@ -7,6 +7,13 @@
         <p class="text-sm text-gray-500 mt-0.5">Create and track all customer appointments</p>
       </div>
       <div class="flex items-center gap-2">
+        <ColumnsToggle
+          :all-columns="allColumns"
+          :hidden-count="hiddenCount"
+          :is-visible="isVisible"
+          @toggle="toggleColumn"
+          @reset="resetColumns"
+        />
         <button @click="exportCSV"
           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
           <ArrowDownTrayIcon class="w-4 h-4" />
@@ -111,13 +118,13 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Title</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Client</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Type</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Location</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Date</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Trainer</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th v-if="isVisible('code')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>
+            <th v-if="isVisible('client')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
+            <th v-if="isVisible('type')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
+            <th v-if="isVisible('location')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Location</th>
+            <th v-if="isVisible('date')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date / Time</th>
+            <th v-if="isVisible('trainer')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Trainer</th>
+            <th v-if="isVisible('status')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -131,20 +138,19 @@
                 @mousemove="moveTitleTooltip" @mouseleave="hideTitleTooltip">
                 {{ appt.title || '—' }}
               </p>
-              <p class="text-xs text-gray-500 sm:hidden">{{ appt.client?.company_name || '—' }}</p>
             </td>
-            <td class="px-4 py-3 text-gray-600">{{ appt.appointment_code || '—' }}</td>
-            <td class="px-4 py-3 hidden sm:table-cell text-gray-600 max-w-[160px] truncate"
+            <td v-if="isVisible('code')" class="px-4 py-3 text-gray-600">{{ appt.appointment_code || '—' }}</td>
+            <td v-if="isVisible('client')" class="px-4 py-3 text-gray-600 max-w-[160px] truncate"
               :title="appt.client?.company_name || '—'">
               {{ appt.client?.company_name || '—' }}
             </td>
-            <td class="px-4 py-3 hidden md:table-cell">
+            <td v-if="isVisible('type')" class="px-4 py-3">
               <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize',
                 appt.appointment_type === 'demo' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700']">
                 {{ appt.appointment_type }}
               </span>
             </td>
-            <td class="px-4 py-3 hidden md:table-cell">
+            <td v-if="isVisible('location')" class="px-4 py-3">
               <span :class="['text-xs font-medium px-2.5 py-0.5 rounded-full capitalize',
                 appt.location_type === 'online' ? 'bg-blue-50 text-blue-600'
                 : appt.location_type === 'hybrid' ? 'bg-purple-50 text-purple-600'
@@ -152,14 +158,14 @@
                 {{ appt.location_type || '—' }}
               </span>
             </td>
-            <td class="px-4 py-3 hidden lg:table-cell text-gray-600 text-xs whitespace-nowrap">
+            <td v-if="isVisible('date')" class="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
               {{ formatDate(appt.scheduled_date) }}<br>
               {{ formatTime(appt.scheduled_start_time) }} – {{ formatTime(appt.scheduled_end_time) }}
             </td>
-            <td class="px-4 py-3 hidden lg:table-cell text-gray-600">
+            <td v-if="isVisible('trainer')" class="px-4 py-3 text-gray-600">
               {{ appt.trainer ? `${appt.trainer.first_name} ${appt.trainer.last_name}` : '—' }}
             </td>
-            <td class="px-4 py-3"><StatusBadge :status="appt.status" /></td>
+            <td v-if="isVisible('status')" class="px-4 py-3"><StatusBadge :status="appt.status" /></td>
             <td class="px-4 py-3 text-right">
               <ChevronRightIcon class="w-4 h-4 text-gray-400" />
             </td>
@@ -195,9 +201,11 @@ import { useSaleStore } from '@/modules/sale/store/sale.js'
 import { useSettingsStore } from '@/modules/shared/store/settings'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
+import { useTableColumns } from '@/modules/shared/composables/useTableColumns.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import AppSelect from '@/modules/shared/components/AppSelect.vue'
+import ColumnsToggle from '@/modules/shared/components/ColumnsToggle.vue'
 import { useEventStore } from '@/modules/shared/store/events.js'
 import CreateEventModal from '@/modules/shared/components/CreateEventModal.vue'
 
@@ -206,6 +214,17 @@ const saleStore = useSaleStore()
 const eventStore = useEventStore()
 const settingsStore = useSettingsStore()
 const { formatDateMed: formatDate, formatTime } = useDateTime()
+
+const allColumns = [
+  { key: 'code', label: 'Code' },
+  { key: 'client', label: 'Client' },
+  { key: 'type', label: 'Type' },
+  { key: 'location', label: 'Location' },
+  { key: 'date', label: 'Date / Time' },
+  { key: 'trainer', label: 'Trainer' },
+  { key: 'status', label: 'Status' },
+]
+const { isVisible, toggleColumn, resetColumns, hiddenCount } = useTableColumns('sale-appointment', allColumns)
 
 const loading = ref(true)
 const meta = computed(() => saleStore.meta)

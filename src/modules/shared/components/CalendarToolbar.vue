@@ -28,13 +28,14 @@
         <!-- Trainer filter (sale role only) -->
         <div v-if="authStore.isSales" class="w-48">
           <AppSelect
-            v-model="trainerFilter"
+            :modelValue="trainerFilter"
             :options="trainerOptions"
             placeholder="All Trainers"
             search-placeholder="Search trainers..."
             :loading="saleStore.loadingTrainers"
             :remote="true"
             clearable
+            @update:modelValue="onTrainerSelect"
             @search="onTrainerSearch"
           />
         </div>
@@ -88,17 +89,28 @@ const eventStore = useEventStore()
 const authStore = useAuthStore()
 const saleStore = useSaleStore()
 
-const trainerFilter = ref(null)
-
 const trainerOptions = computed(() =>
   saleStore.trainers.map(t => ({ value: String(t.id), label: `${t.first_name} ${t.last_name}` }))
 )
 
-watch(trainerFilter, async (val) => {
-  calendarStore.setTrainerFilter(val ? Number(val) : null)
-  const params = val ? { trainer_id: val } : {}
-  await Promise.all([eventStore.loadEvents(params), eventStore.loadSidebar(params)])
+const trainerFilter = ref(
+  calendarStore.selectedTrainerId != null ? String(calendarStore.selectedTrainerId) : null
+)
+
+// Sync external store changes (e.g. after appointment creation) back into the display ref
+watch(() => calendarStore.selectedTrainerId, (val) => {
+  const next = val != null ? String(val) : null
+  if (trainerFilter.value !== next) trainerFilter.value = next
 })
+
+// Direct handler — no watcher, no v-model magic needed
+async function onTrainerSelect(val) {
+  trainerFilter.value = val ?? null
+  const nextTrainerId = val || null
+  calendarStore.setTrainerFilter(nextTrainerId)
+  const params = nextTrainerId ? { trainer_id: nextTrainerId } : {}
+  await Promise.all([eventStore.loadEvents(params), eventStore.loadSidebar(params)])
+}
 
 async function onTrainerSearch(query) {
   await saleStore.fetchTrainers(query)
@@ -106,6 +118,9 @@ async function onTrainerSearch(query) {
 
 onMounted(async () => {
   if (authStore.isSales) await saleStore.fetchTrainers()
+  const trainerId = calendarStore.selectedTrainerId
+  const params = trainerId != null ? { trainer_id: trainerId } : {}
+  await Promise.all([eventStore.loadEvents(params), eventStore.loadSidebar(params)])
 })
 
 const title = ref('')

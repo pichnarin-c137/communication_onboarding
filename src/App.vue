@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen" :data-density="uiPrefs.density">
 
     <template v-if="currentLayout === 'none'">
       <router-view v-slot="{ Component }">
@@ -87,6 +87,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   HomeIcon,
   ClipboardDocumentListIcon,
@@ -95,7 +96,6 @@ import {
   AcademicCapIcon,
   Cog6ToothIcon,
   ChartBarIcon,
-  MapIcon,
   FilmIcon
 } from '@heroicons/vue/24/outline'
 import {
@@ -108,10 +108,13 @@ import ToastContainer from '@/modules/shared/components/ToastContainer.vue'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useNotificationStore } from '@/modules/shared/store/notifications'
 import { useTrainerTracking } from '@/modules/shared/composables/useTrainerTracking'
+import { useUiPreferences } from '@/modules/shared/store/uiPreferences'
 
 const route = useRoute()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const uiPrefs = useUiPreferences()
 const { resumeIfActive } = useTrainerTracking()
 
 watch(
@@ -119,7 +122,6 @@ watch(
   (authenticated) => {
     if (authenticated) {
       notificationStore.connectRealtime()
-      // Resume GPS tracking across all pages if a session was in progress
       if (authStore.isTrainer) resumeIfActive()
     } else {
       notificationStore.disconnectRealtime()
@@ -140,27 +142,27 @@ function toggleCollapse() {
   localStorage.setItem('sidebar_collapsed', sidebarCollapsed.value)
 }
 
-const salesNavGroups = [
+const salesNavGroups = computed(() => [
   {
     label: 'Main',
     items: [
-      { to: '/sales', label: 'Dashboard', icon: HomeIcon },
-      { to: '/sales/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
-      { to: '/sales/onboarding', label: 'Onboarding', icon: AcademicCapIcon },
-      { to: '/sales/calendar', label: 'Calendar', icon: CalendarDaysIcon },
+      { to: '/sales', label: t('nav.dashboard'), icon: HomeIcon },
+      { to: '/sales/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
+      { to: '/sales/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
+      { to: '/sales/calendar', label: t('nav.calendar'), icon: CalendarDaysIcon },
       {
-        label: 'Reports',
+        label: t('nav.reports'),
         icon: ChartBarIcon,
         children: [
-          { to: '/sales/report/appointments', label: 'Appointments', icon: Circle },
+          { to: '/sales/report/appointments', label: t('nav.appointmentReport'), icon: Circle },
         ],
       },
       {
-        label: 'Configurations',
+        label: t('nav.configurations'),
         icon: Cog6ToothIcon,
         children: [
-          { to: '/sales/configurations/telegram-bot', label: 'Telegram Bot', icon: Circle },
-          { to: '/sales/configurations/business-types', label: 'Business Type', icon: Circle },
+          { to: '/sales/configurations/telegram-bot', label: t('nav.telegramBot'), icon: Circle },
+          { to: '/sales/configurations/business-types', label: t('nav.businessTypes'), icon: Circle },
         ],
       },
     ],
@@ -168,38 +170,38 @@ const salesNavGroups = [
   {
     label: 'Account',
     items: [
-      { to: '/sales/profile', label: 'Profile', icon: UserIcon },
-      { to: '/sales/settings', label: 'Settings', icon: Cog6ToothIcon },
+      { to: '/sales/profile', label: t('nav.profile'), icon: UserIcon },
+      { to: '/sales/settings', label: t('nav.settings'), icon: Cog6ToothIcon },
     ],
   },
-]
+])
 
-const trainerNavGroups = [
+const trainerNavGroups = computed(() => [
   {
     label: 'Main',
     items: [
-      { to: '/trainer', label: 'Dashboard', icon: HomeIcon },
-      { to: '/trainer/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
-      { to: '/trainer/onboarding', label: 'Onboarding', icon: AcademicCapIcon },
-      { to: '/trainer/lessons', label: 'Lessons', icon: FilmIcon },
-      { to: '/trainer/calendar', label: 'Calendar', icon: CalendarDaysIcon },
+      { to: '/trainer', label: t('nav.dashboard'), icon: HomeIcon },
+      { to: '/trainer/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
+      { to: '/trainer/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
+      { to: '/trainer/lessons', label: t('nav.lessons'), icon: FilmIcon },
+      { to: '/trainer/calendar', label: t('nav.calendar'), icon: CalendarDaysIcon },
     ],
   },
   {
     label: 'Account',
     items: [
-      { to: '/trainer/profile', label: 'Profile', icon: UserIcon },
-      { to: '/trainer/settings', label: 'Settings', icon: Cog6ToothIcon },
+      { to: '/trainer/profile', label: t('nav.profile'), icon: UserIcon },
+      { to: '/trainer/settings', label: t('nav.settings'), icon: Cog6ToothIcon },
     ],
   },
-]
+])
 
-const trainerBottomTabs = [
-  { to: '/trainer', label: 'Home', icon: HomeIcon },
-  { to: '/trainer/appointments', label: 'Appointments', icon: ClipboardDocumentListIcon },
-  { to: '/trainer/onboarding', label: 'Onboarding', icon: AcademicCapIcon },
-  { to: '/trainer/profile', label: 'Profile', icon: UserIcon },
-]
+const trainerBottomTabs = computed(() => [
+  { to: '/trainer', label: t('nav.dashboard'), icon: HomeIcon },
+  { to: '/trainer/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
+  { to: '/trainer/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
+  { to: '/trainer/profile', label: t('nav.profile'), icon: UserIcon },
+])
 
 function handleResize() {
   windowWidth.value = window.innerWidth

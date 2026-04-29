@@ -6,11 +6,20 @@
         <h1 class="text-2xl font-bold text-gray-900">Onboarding</h1>
         <p class="text-sm text-gray-500 mt-0.5">Track client onboarding progress across your assignments</p>
       </div>
-      <button @click="exportCSV"
-        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-        <ArrowDownTrayIcon class="w-4 h-4" />
-        Export Excel
-      </button>
+      <div class="flex items-center gap-2">
+        <ColumnsToggle
+          :all-columns="allColumns"
+          :hidden-count="hiddenCount"
+          :is-visible="isVisible"
+          @toggle="toggleColumn"
+          @reset="resetColumns"
+        />
+        <button @click="exportCSV"
+          class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <ArrowDownTrayIcon class="w-4 h-4" />
+          Export Excel
+        </button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -59,15 +68,10 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>
-            <th
-              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">
-              Client</th>
-            <th
-              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">
-              Due date</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[140px]">
-              Progress</th>
-            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th v-if="isVisible('client')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
+            <th v-if="isVisible('dueDate')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Due Date</th>
+            <th v-if="isVisible('progress')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[140px]">Progress</th>
+            <th v-if="isVisible('status')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
           </tr>
         </thead>
@@ -83,10 +87,9 @@
                 Cycle {{ ob.cycle }}
               </span>
             </td>
-            <td class="px-4 py-3 hidden sm:table-cell font-medium text-gray-900">{{ ob.client?.company_name || '—' }}
-            </td>
-            <td class="px-4 py-3 hidden md:table-cell text-gray-600">{{ formatDate(ob.due_date) }}</td>
-            <td class="px-4 py-3">
+            <td v-if="isVisible('client')" class="px-4 py-3 font-medium text-gray-900">{{ ob.client?.company_name || '—' }}</td>
+            <td v-if="isVisible('dueDate')" class="px-4 py-3 text-gray-600">{{ formatDate(ob.due_date) }}</td>
+            <td v-if="isVisible('progress')" class="px-4 py-3">
               <div class="flex items-center gap-2">
                 <div class="flex-1 bg-gray-100 rounded-full h-1.5 min-w-[80px]">
                   <div class="bg-primary h-1.5 rounded-full" :style="{ width: `${ob.progress_percentage}%` }"></div>
@@ -96,7 +99,7 @@
                 </span>
               </div>
             </td>
-            <td class="px-4 py-3">
+            <td v-if="isVisible('status')" class="px-4 py-3">
               <StatusBadge :status="ob.status" />
             </td>
             <td class="px-4 py-3 text-right" @click.stop>
@@ -158,14 +161,25 @@ import { onboardingService } from '@/modules/shared/services/onboardingService.j
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime'
+import { useTableColumns } from '@/modules/shared/composables/useTableColumns.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
+import ColumnsToggle from '@/modules/shared/components/ColumnsToggle.vue'
 import { useSettingsStore } from '@/modules/shared/store/settings'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const toast = useToast()
 const { formatDate } = useDateTime()
+
+const allColumns = [
+  { key: 'client', label: 'Client' },
+  { key: 'dueDate', label: 'Due Date' },
+  { key: 'progress', label: 'Progress' },
+  { key: 'status', label: 'Status' },
+]
+const { isVisible, toggleColumn, resetColumns, hiddenCount } = useTableColumns('trainer-onboarding', allColumns)
+
 const loading = ref(true)
 const onboardings = ref([])
 const meta = ref({ total: 0, per_page: 15, current_page: 1, last_page: 1, from: 0, to: 0 })
@@ -252,7 +266,6 @@ function clearSearch() {
   load(1)
 }
 
-// Export CSV
 function exportCSV() {
   const headers = ['Code', 'Client', 'System', 'Progress (%)', 'Status']
   const rows = onboardings.value.map(ob => [
