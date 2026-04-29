@@ -16,34 +16,34 @@
 
     <template v-else-if="ob">
       <!-- On-hold banner -->
-      <div
-        v-if="ob.status === 'on_hold'"
-        class="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-      >
+      <div v-if="ob.status === 'on_hold'"
+        class="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
         <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          <path fill-rule="evenodd"
+            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd" />
         </svg>
         <div><span class="font-semibold">On Hold:</span> {{ ob.hold_reason }}</div>
       </div>
 
       <!-- Revision-requested banner -->
-      <div
-        v-if="ob.status === 'revision_requested'"
-        class="mb-4 flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800"
-      >
+      <div v-if="ob.status === 'revision_requested'"
+        class="mb-4 flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
         <svg class="mt-0.5 h-4 w-4 shrink-0 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clip-rule="evenodd" />
         </svg>
         <div><span class="font-semibold">Revision Requested:</span> {{ ob.revision_note }}</div>
       </div>
 
       <!-- Cycle banner -->
-      <div
-        v-if="ob.cycle > 1"
-        class="mb-4 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800"
-      >
+      <div v-if="ob.cycle > 1"
+        class="mb-4 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
         <svg class="h-4 w-4 shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+          <path fill-rule="evenodd"
+            d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+            clip-rule="evenodd" />
         </svg>
         <span>This is <strong>Cycle {{ ob.cycle }}</strong> for {{ ob.client?.company_name }}.</span>
         <button class="ml-auto text-blue-600 hover:text-blue-800 font-medium text-xs" @click="showCycleDrawer = true">
@@ -79,39 +79,28 @@
           <StatusBadge :status="ob.status" />
 
           <!-- Sale: Request Revision -->
-          <button
-            v-if="isSaleUser && ob.status === 'in_progress'"
-            @click="showRevisionModal = true"
-            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
+          <button v-if="isSaleUser && ob.status === 'in_progress'" @click="showRevisionModal = true"
+            class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
             Request Revision
           </button>
 
           <!-- Trainer-only actions -->
           <template v-if="!isSaleUser">
             <!-- Resume from hold -->
-            <button
-              v-if="ob.status === 'on_hold'"
-              @click="handleResume"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
-            >
+            <button v-if="ob.status === 'on_hold'" @click="handleResume"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
               Resume
             </button>
 
             <!-- Acknowledge & Resume -->
-            <button
-              v-if="ob.status === 'revision_requested'"
-              @click="handleAcknowledge"
-              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
-            >
+            <button v-if="ob.status === 'revision_requested'" @click="handleAcknowledge"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
               Acknowledge &amp; Resume
             </button>
 
             <template v-if="ob.status === 'in_progress'">
-              <button
-                @click="showHoldModal = true"
-                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
+              <button @click="showHoldModal = true"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Put On Hold
               </button>
 
@@ -127,10 +116,8 @@
                   <CheckCircleIcon class="w-3.5 h-3.5" />
                   Mark as Complete
                 </button>
-                <div
-                  v-if="!canComplete"
-                  class="absolute right-0 top-full mt-1 z-20 w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                >
+                <div v-if="!canComplete"
+                  class="absolute right-0 top-full mt-1 z-20 w-64 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                   {{ completeTooltip }}
                 </div>
               </div>
@@ -140,11 +127,7 @@
       </div>
 
       <!-- Info strip — visible above the fold -->
-      <OnboardingInfoStrip
-        v-if="ob"
-        :onboarding-id="ob.id"
-        @open="openPanelDrawer"
-      />
+      <OnboardingInfoStrip v-if="ob" :onboarding-id="ob.id" @open="openPanelDrawer" />
 
       <!-- Client profile header card -->
       <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -159,7 +142,8 @@
 
             <div class="flex-1 min-w-0">
               <h2 class="text-sm font-bold text-gray-900">
-                {{ [ob.client?.company_name, ob.appointment?.appointment_code, ob.client?.phone_number].filter(Boolean).join(' | ') }}
+                {{ [ob.client?.company_name, ob.appointment?.appointment_code,
+                ob.client?.phone_number].filter(Boolean).join(' | ') }}
               </h2>
 
               <div class="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -208,13 +192,13 @@
 
 
                   <!-- Location row -->
-                <div class="mt-2 flex items-center gap-1.5">
-                  <MapPinIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
-                  <a v-if="ob.client?.link_address" :href="ob.client.link_address" target="_blank"
-                    class="text-[10px] text-primary hover:underline inline-flex items-center gap-1">
-                    Link Address
-                  </a>
-                </div>
+                  <div class="mt-2 flex items-center gap-1.5">
+                    <MapPinIcon class="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                    <a v-if="ob.client?.link_address" :href="ob.client.link_address" target="_blank"
+                      class="text-[10px] text-primary hover:underline inline-flex items-center gap-1">
+                      Link Address
+                    </a>
+                  </div>
                 </div>
 
                 <div class="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
@@ -269,7 +253,7 @@
       </div>
 
       <!-- Company Information (full width) -->
-      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div class="bg-white border border-gray-200 rounded-xl overflow-visible">
         <!-- Card header -->
         <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
           <div class="flex items-center gap-2">
@@ -342,13 +326,10 @@
 
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">Type of Business</label>
-                <select v-model="companyForm.business_type" :disabled="isCompleted || isSaleUser"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors appearance-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20">
-                  <option value="">Select an option</option>
-                  <option v-for="bt in businessTypes" :key="bt.id" :value="bt.value || bt.id">
-                    {{ bt.name_en }}
-                  </option>
-                </select>
+                <AppSelect v-model="companyForm.business_type" :options="businessTypeOptionsEn"
+                  :loading="businessTypeSearching" :remote="true" :disabled="isCompleted || isSaleUser"
+                  placeholder="Select an option" search-placeholder="Search business types..."
+                  empty-text="No business types found" @search="onBusinessTypeSearch" />
               </div>
 
               <div class="space-y-1">
@@ -377,13 +358,10 @@
               <div class="space-y-1">
                 <label class="block text-xs font-medium text-gray-600">ប្រភេទអាជីវកម្ម</label>
                 <!-- Same v-model as English so they always stay in sync -->
-                <select v-model="companyForm.business_type" :disabled="isCompleted || isSaleUser"
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm transition-colors appearance-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed bg-white focus:border-primary focus:ring-2 focus:ring-primary/20">
-                  <option value="">Select an option</option>
-                  <option v-for="bt in businessTypes" :key="bt.id" :value="bt.value || bt.id">
-                    {{ bt.name_km || bt.name_en }}
-                  </option>
-                </select>
+                <AppSelect v-model="companyForm.business_type" :options="businessTypeOptionsKh"
+                  :loading="businessTypeSearching" :remote="true" :disabled="isCompleted || isSaleUser"
+                  placeholder="Select an option" search-placeholder="Search business types..."
+                  empty-text="No business types found" @search="onBusinessTypeSearch" />
               </div>
 
               <div class="space-y-1">
@@ -423,17 +401,20 @@
             <div class="divide-y divide-gray-50">
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Import Employees</span>
-                <input v-model.number="analysisForm.import_employee_count" type="number" min="0" :disabled="isCompleted || isSaleUser"
+                <input v-model.number="analysisForm.import_employee_count" type="number" min="0"
+                  :disabled="isCompleted || isSaleUser"
                   class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Connected Apps</span>
-                <input v-model.number="analysisForm.connected_app_count" type="number" min="0" :disabled="isCompleted || isSaleUser"
+                <input v-model.number="analysisForm.connected_app_count" type="number" min="0"
+                  :disabled="isCompleted || isSaleUser"
                   class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
               <div class="flex items-center gap-3 px-5 py-3.5">
                 <span class="flex-1 text-sm text-gray-700">Mobile Profiles</span>
-                <input v-model.number="analysisForm.profile_mobile_count" type="number" min="0" :disabled="isCompleted || isSaleUser"
+                <input v-model.number="analysisForm.profile_mobile_count" type="number" min="0"
+                  :disabled="isCompleted || isSaleUser"
                   class="w-24 px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500" />
               </div>
             </div>
@@ -458,7 +439,8 @@
                     :class="isCompleted ? '' : 'hover:border-primary'"></button>
                   <button v-else @click="!isCompleted && uncheckPolicy(p.id)" :disabled="isCompleted"
                     class="flex-shrink-0 transition-colors disabled:cursor-not-allowed"
-                    :class="isCompleted ? 'text-emerald-400' : 'text-emerald-500 hover:text-amber-500'" title="Uncheck policy">
+                    :class="isCompleted ? 'text-emerald-400' : 'text-emerald-500 hover:text-amber-500'"
+                    title="Uncheck policy">
                     <CheckCircleIcon class="w-4 h-4" />
                   </button>
                 </template>
@@ -470,7 +452,8 @@
                   {{ p.policy_name }}
                 </span>
                 <span v-if="p.is_default" class="text-[10px] uppercase tracking-wider text-gray-400">default</span>
-                <button v-if="!isSaleUser && !p.is_default && !p.is_checked && !isCompleted" @click="promptRemovePolicy(p.id)"
+                <button v-if="!isSaleUser && !p.is_default && !p.is_checked && !isCompleted"
+                  @click="promptRemovePolicy(p.id)"
                   class="text-xs text-gray-400 hover:text-red-500 transition-colors">Remove</button>
               </div>
             </div>
@@ -533,7 +516,8 @@
                 <span class="text-xs font-medium text-primary">Upload</span>
               </div>
               <div v-else-if="!lesson && isSaleUser" class="flex items-center gap-3 px-5 py-4">
-                <div class="w-16 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center shrink-0">
+                <div
+                  class="w-16 h-10 bg-gray-100 rounded border border-gray-200 flex items-center justify-center shrink-0">
                   <VideoCameraIcon class="w-5 h-5 text-gray-300" />
                 </div>
                 <div class="flex-1 min-w-0">
@@ -572,8 +556,7 @@
                     class="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
                     <CheckCircleIcon class="w-3 h-3" /> Sent
                   </span>
-                  <span v-else-if="isSaleUser"
-                    class="text-[10px] text-gray-400 shrink-0">Not sent</span>
+                  <span v-else-if="isSaleUser" class="text-[10px] text-gray-400 shrink-0">Not sent</span>
                   <template v-else-if="!isCompleted">
                     <button @click="promptSendLesson(lesson)"
                       class="px-2.5 py-1 text-xs font-medium text-primary border border-primary/30 rounded hover:bg-primary/5 transition-colors">Send</button>
@@ -682,15 +665,9 @@
         </Transition>
       </Teleport>
 
-    <!-- Sessions / Feedback / Revisions drawer -->
-    <OnboardingPanelsDrawer
-      v-if="ob"
-      :open="showPanelDrawer"
-      :onboarding-id="ob.id"
-      :initial-section="panelSection"
-      @close="showPanelDrawer = false"
-      @feedback-updated="onFeedbackUpdated"
-    />
+      <!-- Sessions / Feedback / Revisions drawer -->
+      <OnboardingPanelsDrawer v-if="ob" :open="showPanelDrawer" :onboarding-id="ob.id" :initial-section="panelSection"
+        @close="showPanelDrawer = false" @feedback-updated="onFeedbackUpdated" />
 
     </template>
 
@@ -712,7 +689,7 @@
                 <h3 class="text-sm font-semibold text-gray-900">Patent</h3>
               </div>
               <!-- Re-upload button inside modal -->
-              <label v-if="!ocrProcessing && !isCompleted" class="cursor-pointer">
+              <label v-if="!isSaleUser && !ocrProcessing && !isCompleted" class="cursor-pointer">
                 <input type="file" accept="image/*,.pdf" class="hidden" @change="handlePatentUpload" />
                 <span
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
@@ -943,8 +920,8 @@
 
     <ConfirmModal :open="showLeaveModal" title="Unsaved Changes"
       message="You have unsaved changes that will be lost if you leave this page. Save your work before leaving."
-      confirm-text="Leave anyway" cancel-text="Stay & Save" type="warning"
-      @confirm="confirmLeave" @cancel="cancelLeave" />
+      confirm-text="Leave anyway" cancel-text="Stay & Save" type="warning" @confirm="confirmLeave"
+      @cancel="cancelLeave" />
 
     <!-- Hold Modal -->
     <Teleport to="body">
@@ -954,22 +931,15 @@
           <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
             <h2 class="font-semibold text-gray-900 mb-1">Put Onboarding On Hold</h2>
             <p class="text-sm text-gray-500 mb-4">Provide a reason. All forms will become read-only.</p>
-            <textarea
-              v-model="holdReason"
-              rows="4"
-              placeholder="Reason (min 10 characters)..."
-              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none mb-4"
-            />
+            <textarea v-model="holdReason" rows="4" placeholder="Reason (min 10 characters)..."
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none mb-4" />
             <div class="flex justify-end gap-2">
               <button @click="showHoldModal = false"
                 class="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
-              <button
-                :disabled="holdReason.trim().length < 10 || holdSubmitting"
-                @click="handleHold"
-                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
+              <button :disabled="holdReason.trim().length < 10 || holdSubmitting" @click="handleHold"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                 {{ holdSubmitting ? 'Confirming...' : 'Confirm Hold' }}
               </button>
             </div>
@@ -979,12 +949,8 @@
     </Teleport>
 
     <!-- Cycle History Drawer -->
-    <CycleHistoryDrawer
-      :open="showCycleDrawer"
-      :onboarding-id="ob?.id"
-      :role="isSaleUser ? 'sale' : 'trainer'"
-      @close="showCycleDrawer = false"
-    />
+    <CycleHistoryDrawer :open="showCycleDrawer" :onboarding-id="ob?.id" :role="isSaleUser ? 'sale' : 'trainer'"
+      @close="showCycleDrawer = false" />
 
     <!-- Sale: Request Revision Modal -->
     <Teleport to="body">
@@ -993,23 +959,17 @@
           <div class="absolute inset-0 bg-black/40" @click="showRevisionModal = false" />
           <div class="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
             <h2 class="font-semibold text-gray-900 mb-1">Request Revision</h2>
-            <p class="text-sm text-gray-500 mb-4">Describe what needs to be corrected. The trainer will see this note.</p>
-            <textarea
-              v-model="revisionNote"
-              rows="4"
-              placeholder="Describe what needs to be revised..."
-              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none mb-4"
-            />
+            <p class="text-sm text-gray-500 mb-4">Describe what needs to be corrected. The trainer will see this note.
+            </p>
+            <textarea v-model="revisionNote" rows="4" placeholder="Describe what needs to be revised..."
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none mb-4" />
             <div class="flex justify-end gap-2">
               <button @click="showRevisionModal = false"
                 class="px-4 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
-              <button
-                :disabled="!revisionNote.trim() || revisionSubmitting"
-                @click="handleRequestRevision"
-                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
+              <button :disabled="!revisionNote.trim() || revisionSubmitting" @click="handleRequestRevision"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                 {{ revisionSubmitting ? 'Sending...' : 'Send Request' }}
               </button>
             </div>
@@ -1056,6 +1016,8 @@ import { useOCR } from '@/modules/shared/composables/useOCR.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { useSettingsStore } from '@/modules/shared/store/settings'
+import AppSelect from '@/modules/shared/components/AppSelect.vue'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import ConfirmModal from '@/modules/shared/components/ConfirmModal.vue'
@@ -1063,6 +1025,8 @@ import OnboardingInfoStrip from '@/modules/shared/components/OnboardingInfoStrip
 import OnboardingPanelsDrawer from '@/modules/shared/components/OnboardingPanelsDrawer.vue'
 import CycleHistoryDrawer from '@/modules/shared/components/CycleHistoryDrawer.vue'
 import StarRating from '@/modules/shared/components/StarRating.vue'
+const settingsStore = useSettingsStore()
+
 
 const route = useRoute()
 const router = useRouter()
@@ -1209,21 +1173,21 @@ const showCycleDrawer = ref(false)
 
 // Account status helper
 const isCompleted = computed(() => ob.value?.status === 'completed')
-const hasPatent   = computed(() => !!patentPreviewUrl.value)
+const hasPatent = computed(() => !!patentPreviewUrl.value)
 
 const isReadOnly = computed(() =>
   ['on_hold', 'revision_requested', 'completed', 'cancelled'].includes(ob.value?.status)
 )
 
 const canComplete = computed(() =>
-  (ob.value?.progress_percentage ?? 0) >= 90 && feedbackStatus.value === 'received'
+  (ob.value?.progress_percentage ?? 0) >= 90 && feedbackStatus.value === 'submitted'
 )
 
 const completeTooltip = computed(() => {
   const msgs = []
   const prog = ob.value?.progress_percentage ?? 0
   if (prog < 90) msgs.push(`Progress is ${Math.round(prog)}%. At least 90% is required.`)
-  if (feedbackStatus.value !== 'received') msgs.push('Client feedback has not been submitted yet.')
+  if (feedbackStatus.value !== 'submitted') msgs.push('Client feedback has not been submitted yet.')
   return msgs.join(' ')
 })
 
@@ -1408,14 +1372,40 @@ function handleLogoUpload(e) {
 
 // Business Types — loaded from API
 const businessTypes = ref([])
+const businessTypeQuery = ref('')
+const businessTypeSearching = ref(false)
 
-async function loadBusinessTypes() {
+const businessTypeOptionsEn = computed(() =>
+  (businessTypes.value || []).map(bt => ({
+    value: bt.value || bt.id,
+    label: bt.name_en || bt.name_km || bt.name_kh || '—'
+  }))
+)
+const businessTypeOptionsKh = computed(() =>
+  (businessTypes.value || []).map(bt => ({
+    value: bt.value || bt.id,
+    label: bt.name_km || bt.name_kh || bt.name_en || '—'
+  }))
+)
+
+async function loadBusinessTypes(query = businessTypeQuery.value) {
+  const trimmed = (query || '').trim()
+  businessTypeQuery.value = trimmed
+  businessTypeSearching.value = true
   try {
-    const res = await businessTypeService.getAll({ per_page: 100 })
+    const params = { per_page: settingsStore.settings?.items_per_page || 15 }
+    if (trimmed) params.search = trimmed
+    const res = await businessTypeService.getAll(params)
     businessTypes.value = (res.data || [])
   } catch {
     businessTypes.value = []
+  } finally {
+    businessTypeSearching.value = false
   }
+}
+
+function onBusinessTypeSearch(query) {
+  loadBusinessTypes(query)
 }
 
 // OCR — patent document auto-fill
@@ -1532,10 +1522,10 @@ const addingPolicy = ref(false)
 const addingLesson = ref(false)
 
 // Per-action loading flags for operations that lacked them
-const togglingPolicy  = ref(false)
-const removingPolicy  = ref(false)
-const deletingLesson  = ref(false)
-const completing      = ref(false)
+const togglingPolicy = ref(false)
+const removingPolicy = ref(false)
+const deletingLesson = ref(false)
+const completing = ref(false)
 
 const isSaving = computed(() =>
   savingCompany.value ||
@@ -1901,7 +1891,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   saveViewState()
-  window.removeEventListener('scroll', handleWindowScroll)
+window.removeEventListener('scroll', handleWindowScroll)
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 </script>

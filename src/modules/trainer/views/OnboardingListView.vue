@@ -88,7 +88,7 @@
               </span>
             </td>
             <td v-if="isVisible('client')" class="px-4 py-3 font-medium text-gray-900">{{ ob.client?.company_name || '—' }}</td>
-            <td v-if="isVisible('dueDate')" class="px-4 py-3 text-gray-600">{{ formatDate(ob.due_date) }}</td>
+            <td v-if="isVisible('dueDate')" class="px-4 py-3 text-gray-600">{{ ob.due_date || '—' }}</td>
             <td v-if="isVisible('progress')" class="px-4 py-3">
               <div class="flex items-center gap-2">
                 <div class="flex-1 bg-gray-100 rounded-full h-1.5 min-w-[80px]">
@@ -160,7 +160,6 @@ import { ChevronRightIcon, ClipboardDocumentListIcon, MagnifyingGlassIcon, XMark
 import { onboardingService } from '@/modules/shared/services/onboardingService.js'
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
-import { useDateTime } from '@/modules/shared/composables/useDateTime'
 import { useTableColumns } from '@/modules/shared/composables/useTableColumns.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
@@ -170,8 +169,7 @@ import { useSettingsStore } from '@/modules/shared/store/settings'
 const router = useRouter()
 const settingsStore = useSettingsStore()
 const toast = useToast()
-const { formatDate } = useDateTime()
-
+  
 const allColumns = [
   { key: 'client', label: 'Client' },
   { key: 'dueDate', label: 'Due Date' },

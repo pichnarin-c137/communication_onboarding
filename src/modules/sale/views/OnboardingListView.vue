@@ -7,13 +7,8 @@
         <p class="text-sm text-gray-500 mt-0.5">Track onboarding progress for completed training appointments</p>
       </div>
       <div class="flex items-center gap-2">
-        <ColumnsToggle
-          :all-columns="allColumns"
-          :hidden-count="hiddenCount"
-          :is-visible="isVisible"
-          @toggle="toggleColumn"
-          @reset="resetColumns"
-        />
+        <ColumnsToggle :all-columns="allColumns" :hidden-count="hiddenCount" :is-visible="isVisible"
+          @toggle="toggleColumn" @reset="resetColumns" />
         <button @click="exportCSV"
           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
           <ArrowDownTrayIcon class="w-4 h-4" />
@@ -26,11 +21,24 @@
     <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 space-y-3">
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold text-gray-700">Filters</h2>
-        <button v-if="hasActiveFilters" @click="resetFilters"
-          class="text-xs text-primary hover:underline">Reset all</button>
+        <button v-if="hasActiveFilters" @click="resetFilters" class="text-xs text-primary hover:underline">Reset
+          all</button>
       </div>
-      <!-- Row 1: Status + Trainer + Search -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <!-- Row: Status + Trainer + Search + Date range -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+         <div class="flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 py-2 bg-white w-full">
+          <CalendarDaysIcon class="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <input v-model="dateFrom" @change="load(1)" type="date"
+            class="flex-1 text-sm bg-transparent border-none outline-none text-gray-700 min-w-0" />
+          <span class="text-gray-300 px-1 flex-shrink-0">–</span>
+          <input v-model="dateTo" @change="load(1)" type="date"
+            class="flex-1 text-sm bg-transparent border-none outline-none text-gray-700 min-w-0" />
+        </div>
+
+         <AppSelect v-model="trainerFilter" :options="trainerOptions" :loading="saleStore.loadingTrainers"
+          placeholder="All Trainers" search-placeholder="Search trainers..." empty-text="No trainers found" clearable
+          remote @search="onTrainerSearch" />
+
         <select v-model="statusFilter" @change="load(1)"
           class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
           <option value="">All Statuses</option>
@@ -40,18 +48,6 @@
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
         </select>
-
-        <AppSelect
-          v-model="trainerFilter"
-          :options="trainerOptions"
-          :loading="saleStore.loadingTrainers"
-          placeholder="All Trainers"
-          search-placeholder="Search trainers..."
-          empty-text="No trainers found"
-          clearable
-          remote
-          @search="onTrainerSearch"
-        />
 
         <div class="relative min-w-0">
           <MagnifyingGlassIcon
@@ -64,16 +60,6 @@
             <XMarkIcon class="w-4 h-4" />
           </button>
         </div>
-      </div>
-
-      <!-- Row 2: Date range -->
-      <div class="flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 py-2 bg-white w-full sm:w-80">
-        <CalendarDaysIcon class="w-4 h-4 text-gray-400 flex-shrink-0" />
-        <input v-model="dateFrom" @change="load(1)" type="date"
-          class="flex-1 text-sm bg-transparent border-none outline-none text-gray-700 min-w-0" />
-        <span class="text-gray-300 px-1 flex-shrink-0">–</span>
-        <input v-model="dateTo" @change="load(1)" type="date"
-          class="flex-1 text-sm bg-transparent border-none outline-none text-gray-700 min-w-0" />
       </div>
     </div>
 
@@ -91,30 +77,31 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>
-            <th v-if="isVisible('client')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
-            <th v-if="isVisible('system')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">System</th>
-            <th v-if="isVisible('progress')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progress</th>
-            <th v-if="isVisible('status')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th v-if="isVisible('client')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
+            <th v-if="isVisible('dueDate')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Due Date</th>
+            <th v-if="isVisible('progress')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Progress</th>
+            <th v-if="isVisible('status')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="ob in onboardings" :key="ob.id"
-            class="hover:bg-gray-50 transition-colors cursor-pointer"
+          <tr v-for="ob in onboardings" :key="ob.id" class="hover:bg-gray-50 transition-colors cursor-pointer"
             @click="router.push(`/sales/onboarding/${ob.id}`)">
             <td class="px-4 py-3">
               <p class="font-mono text-xs font-medium text-gray-900">
                 {{ ob.request_code }}
-                <span
-                  v-if="ob.cycle > 1"
-                  class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700"
-                >
+                <span v-if="ob.cycle > 1"
+                  class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
                   Cycle {{ ob.cycle }}
                 </span>
               </p>
             </td>
             <td v-if="isVisible('client')" class="px-4 py-3 text-gray-600">{{ ob.client?.company_name || '—' }}</td>
-            <td v-if="isVisible('system')" class="px-4 py-3 text-gray-600">{{ ob.system?.name || '—' }}</td>
+            <td v-if="isVisible('dueDate')" class="px-4 py-3 text-gray-600">{{ ob.due_date || '—' }}</td>
             <td v-if="isVisible('progress')" class="px-4 py-3">
               <div class="flex items-center gap-2">
                 <div class="w-24 bg-gray-100 rounded-full h-1.5 hidden sm:block">
@@ -123,7 +110,9 @@
                 <span class="text-xs font-semibold text-gray-700">{{ Math.round(ob.progress_percentage) }}%</span>
               </div>
             </td>
-            <td v-if="isVisible('status')" class="px-4 py-3"><StatusBadge :status="ob.status" /></td>
+            <td v-if="isVisible('status')" class="px-4 py-3">
+              <StatusBadge :status="ob.status" />
+            </td>
             <td class="px-4 py-3 text-right">
               <ChevronRightIcon class="w-4 h-4 text-gray-400" />
             </td>
@@ -165,7 +154,7 @@ const saleStore = useSaleStore()
 
 const allColumns = [
   { key: 'client', label: 'Client' },
-  { key: 'system', label: 'System' },
+  { key: 'dueDate', label: 'Due Date' },
   { key: 'progress', label: 'Progress' },
   { key: 'status', label: 'Status' },
 ]
@@ -238,11 +227,11 @@ function clearSearch() {
 
 // Export CSV
 function exportCSV() {
-  const headers = ['Code', 'Client', 'System', 'Progress (%)', 'Status']
+  const headers = ['Code', 'Client', 'Due Date', 'Progress (%)', 'Status']
   const rows = onboardings.value.map(ob => [
     ob.request_code || '',
     ob.client?.company_name || '',
-    ob.system?.name || '',
+    ob.due_date || '',
     Math.round(ob.progress_percentage ?? 0),
     ob.status || ''
   ])

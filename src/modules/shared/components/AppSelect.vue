@@ -130,6 +130,7 @@ const wrapperRef    = ref(null)
 const searchInputRef = ref(null)
 const isOpen        = ref(false)
 const searchQuery   = ref('')
+let searchTimer     = null
 
 const selectedOption = computed(() =>
   props.options.find(o => o.value === props.modelValue) ?? null
@@ -142,7 +143,11 @@ const filteredOptions = computed(() => {
   return props.options.filter(o => o.label.toLowerCase().includes(q))
 })
 
-watch(searchQuery, (q) => { if (isOpen.value) emit('search', q.trim()) })
+watch(searchQuery, (q) => {
+  if (!isOpen.value) return
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => emit('search', q.trim()), 400)
+})
 
 function open() {
   if (props.disabled) return
