@@ -65,6 +65,9 @@ export const useEventStore = defineStore('events', {
       if (calendarStore.selectedTrainerId != null) {
         result = result.filter(e => e.trainerId === calendarStore.selectedTrainerId)
       }
+      if (calendarStore.hiddenStatuses.length > 0) {
+        result = result.filter(e => !calendarStore.hiddenStatuses.includes(e.status))
+      }
       return result
     }
   },

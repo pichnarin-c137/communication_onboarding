@@ -7,6 +7,13 @@
         <p class="text-sm text-gray-500 mt-0.5">View and manage your assigned appointments</p>
       </div>
       <div class="flex items-center gap-2">
+        <StatusFilterToggle
+          :all-statuses="allStatuses"
+          :hidden-count="hiddenStatusCount"
+          :is-visible="isStatusVisible"
+          @toggle="toggleStatus"
+          @reset="resetStatuses"
+        />
         <ColumnsToggle
           :all-columns="allColumns"
           :hidden-count="hiddenCount"
@@ -87,11 +94,20 @@
     <!-- Table -->
     <SkeletonLoader v-if="loading" type="table" :count="5" />
 
-    <div v-else-if="appointments.length === 0" class="text-center py-16 bg-white rounded-xl border border-gray-200">
+    <div v-else-if="visibleAppointments.length === 0" class="text-center py-16 bg-white rounded-xl border border-gray-200">
       <CalendarDaysIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
       <p class="text-sm font-semibold text-gray-700">No appointments found</p>
-      <p class="text-xs text-gray-500 mt-1">Try adjusting your filters or schedule a new appointment.</p>
+      <p class="text-xs text-gray-500 mt-1">
+        <template v-if="hiddenStatusCount > 0 && appointments.length > 0">
+          Some appointments are hidden by your status filter.
+        </template>
+        <template v-else>Try adjusting your filters or schedule a new appointment.</template>
+      </p>
       <div class="mt-4 flex items-center justify-center gap-2">
+        <button v-if="hiddenStatusCount > 0" @click="resetStatuses"
+          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Show all statuses
+        </button>
         <button v-if="hasActiveFilters" @click="resetFilters"
           class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
           Reset Filters
@@ -119,7 +135,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="appt in appointments" :key="appt.id"
+          <tr v-for="appt in visibleAppointments" :key="appt.id"
             class="hover:bg-gray-50 cursor-pointer transition-colors"
             @click="router.push(`/trainer/appointments/${appt.id}`)">
             <td class="px-4 py-3">
@@ -191,9 +207,11 @@ import { trainerService } from '@/modules/trainer/services/trainerService.js'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
 import { useTableColumns } from '@/modules/shared/composables/useTableColumns.js'
+import { useStatusFilter } from '@/modules/shared/composables/useStatusFilter.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import ColumnsToggle from '@/modules/shared/components/ColumnsToggle.vue'
+import StatusFilterToggle from '@/modules/shared/components/StatusFilterToggle.vue'
 import { useSettingsStore } from '@/modules/shared/store/settings'
 import { useEventStore } from '@/modules/shared/store/events.js'
 import CreateEventModal from '@/modules/shared/components/CreateEventModal.vue'
@@ -213,6 +231,16 @@ const allColumns = [
 ]
 const { isVisible, toggleColumn, resetColumns, hiddenCount } = useTableColumns('trainer-appointment', allColumns)
 
+const allStatuses = [
+  { key: 'pending', label: 'Pending' },
+  { key: 'leave_office', label: 'Leave Office' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'done', label: 'Done' },
+  { key: 'cancelled', label: 'Cancelled' },
+  { key: 'rescheduled', label: 'Rescheduled' },
+]
+const { isStatusVisible, toggleStatus, resetStatuses, hiddenCount: hiddenStatusCount, filterByStatus } = useStatusFilter('trainer-appointment', allStatuses)
+
 const loading = ref(true)
 const appointments = ref([])
 const meta = ref({ total: 0, per_page: 15, current_page: 1, last_page: 1, from: 0, to: 0 })
@@ -224,6 +252,8 @@ const dateTo = ref('')
 const searchQuery = ref('')
 let searchDebounceTimer = null
 const tooltip = ref({ visible: false, text: '', x: 0, y: 0 })
+
+const visibleAppointments = computed(() => filterByStatus(appointments.value))
 
 const hasActiveFilters = computed(() =>
   !!statusFilter.value || !!typeFilter.value || !!locationFilter.value ||
@@ -285,7 +315,7 @@ function hideTitleTooltip() { tooltip.value.visible = false }
 
 function exportCSV() {
   const headers = ['Title', 'Code', 'Client', 'Type', 'Location', 'Date', 'Start Time', 'Status']
-  const rows = appointments.value.map(a => [
+  const rows = visibleAppointments.value.map(a => [
     a.title || '',
     a.appointment_code || '',
     a.client?.company_name || '',

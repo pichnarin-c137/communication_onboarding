@@ -7,6 +7,13 @@
         <p class="text-sm text-gray-500 mt-0.5">Create and track all customer appointments</p>
       </div>
       <div class="flex items-center gap-2">
+        <StatusFilterToggle
+          :all-statuses="allStatuses"
+          :hidden-count="hiddenStatusCount"
+          :is-visible="isStatusVisible"
+          @toggle="toggleStatus"
+          @reset="resetStatuses"
+        />
         <ColumnsToggle
           :all-columns="allColumns"
           :hidden-count="hiddenCount"
@@ -95,12 +102,21 @@
     <!-- List -->
     <SkeletonLoader v-if="loading" type="table" :count="5" />
 
-    <div v-else-if="displayedAppointments.length === 0"
+    <div v-else-if="visibleAppointments.length === 0"
       class="text-center py-16 bg-white rounded-xl border border-gray-200">
       <CalendarDaysIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
       <p class="text-sm font-semibold text-gray-700">No appointments found</p>
-      <p class="text-xs text-gray-500 mt-1">Try adjusting your filters or create a new appointment.</p>
+      <p class="text-xs text-gray-500 mt-1">
+        <template v-if="hiddenStatusCount > 0 && displayedAppointments.length > 0">
+          Some appointments are hidden by your status filter.
+        </template>
+        <template v-else>Try adjusting your filters or create a new appointment.</template>
+      </p>
       <div class="mt-4 flex items-center justify-center gap-2">
+        <button v-if="hiddenStatusCount > 0" @click="resetStatuses"
+          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Show all statuses
+        </button>
         <button v-if="hasActiveFilters" @click="resetFilters"
           class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
           Reset Filters
@@ -129,7 +145,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="appt in displayedAppointments" :key="appt.id"
+          <tr v-for="appt in visibleAppointments" :key="appt.id"
             class="hover:bg-gray-50 transition-colors cursor-pointer"
             @click="router.push(`/sales/appointments/${appt.id}`)">
             <td class="px-4 py-3">
@@ -202,10 +218,12 @@ import { useSettingsStore } from '@/modules/shared/store/settings'
 import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
 import { useTableColumns } from '@/modules/shared/composables/useTableColumns.js'
+import { useStatusFilter } from '@/modules/shared/composables/useStatusFilter.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import AppSelect from '@/modules/shared/components/AppSelect.vue'
 import ColumnsToggle from '@/modules/shared/components/ColumnsToggle.vue'
+import StatusFilterToggle from '@/modules/shared/components/StatusFilterToggle.vue'
 import { useEventStore } from '@/modules/shared/store/events.js'
 import CreateEventModal from '@/modules/shared/components/CreateEventModal.vue'
 
@@ -226,6 +244,16 @@ const allColumns = [
 ]
 const { isVisible, toggleColumn, resetColumns, hiddenCount } = useTableColumns('sale-appointment', allColumns)
 
+const allStatuses = [
+  { key: 'pending', label: 'Pending' },
+  { key: 'leave_office', label: 'Leave Office' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'done', label: 'Done' },
+  { key: 'cancelled', label: 'Cancelled' },
+  { key: 'rescheduled', label: 'Rescheduled' },
+]
+const { isStatusVisible, toggleStatus, resetStatuses, hiddenCount: hiddenStatusCount, filterByStatus } = useStatusFilter('sale-appointment', allStatuses)
+
 const loading = ref(true)
 const meta = computed(() => saleStore.meta)
 const searchQuery = ref('')
@@ -242,6 +270,7 @@ const statusFilter = computed({ get: () => saleStore.statusFilter, set: v => { s
 const typeFilter = computed({ get: () => saleStore.typeFilter, set: v => { saleStore.typeFilter = v } })
 const trainerFilter = computed({ get: () => saleStore.trainerFilter, set: v => { saleStore.trainerFilter = v ?? '' } })
 const displayedAppointments = computed(() => saleStore.filteredAppointments)
+const visibleAppointments = computed(() => filterByStatus(displayedAppointments.value))
 
 const hasActiveFilters = computed(() =>
   !!saleStore.trainerFilter || !!saleStore.statusFilter || !!saleStore.typeFilter ||
@@ -300,7 +329,7 @@ function hideTitleTooltip() { tooltip.value.visible = false }
 
 function exportCSV() {
   const headers = ['Title', 'Code', 'Client', 'Type', 'Location', 'Date', 'Start Time', 'End Time', 'Trainer', 'Status']
-  const rows = displayedAppointments.value.map(a => [
+  const rows = visibleAppointments.value.map(a => [
     a.title || '', a.appointment_code || '', a.client?.company_name || '',
     a.appointment_type || '', a.location_type || '', a.scheduled_date || '',
     a.scheduled_start_time || '', a.scheduled_end_time || '',

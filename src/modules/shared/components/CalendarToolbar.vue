@@ -40,6 +40,15 @@
           />
         </div>
 
+        <!-- Status filter -->
+        <StatusFilterToggle
+          :all-statuses="allStatuses"
+          :hidden-count="calendarStore.statusHiddenCount"
+          :is-visible="(key) => calendarStore.isStatusVisible(key)"
+          @toggle="calendarStore.toggleStatusFilter"
+          @reset="calendarStore.resetStatusFilter"
+        />
+
         <!-- View buttons -->
         <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden">
           <button
@@ -79,6 +88,7 @@ import { useEventStore } from '@/modules/shared/store/events.js'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useSaleStore } from '@/modules/sale/store/sale.js'
 import AppSelect from '@/modules/shared/components/AppSelect.vue'
+import StatusFilterToggle from '@/modules/shared/components/StatusFilterToggle.vue'
 
 const props = defineProps({
   calendarApi: { type: Object, default: null }
@@ -89,6 +99,15 @@ const eventStore = useEventStore()
 const authStore = useAuthStore()
 const saleStore = useSaleStore()
 
+const allStatuses = [
+  { key: 'pending', label: 'Pending' },
+  { key: 'leave_office', label: 'Leave Office' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'done', label: 'Done' },
+  { key: 'cancelled', label: 'Cancelled' },
+  { key: 'rescheduled', label: 'Rescheduled' },
+]
+
 const trainerOptions = computed(() =>
   saleStore.trainers.map(t => ({ value: String(t.id), label: `${t.first_name} ${t.last_name}` }))
 )
@@ -97,13 +116,11 @@ const trainerFilter = ref(
   calendarStore.selectedTrainerId != null ? String(calendarStore.selectedTrainerId) : null
 )
 
-// Sync external store changes (e.g. after appointment creation) back into the display ref
 watch(() => calendarStore.selectedTrainerId, (val) => {
   const next = val != null ? String(val) : null
   if (trainerFilter.value !== next) trainerFilter.value = next
 })
 
-// Direct handler — no watcher, no v-model magic needed
 async function onTrainerSelect(val) {
   trainerFilter.value = val ?? null
   const nextTrainerId = val || null
