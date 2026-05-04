@@ -12,16 +12,28 @@
           <p class="text-sm text-gray-500 mt-0.5">{{ appointment?.client?.company_name }}</p>
         </div>
       </div>
-      <StatusBadge v-if="appointment" :status="appointment.status" class="shrink-0" />
+
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <StatusBadge v-if="appointment" :status="appointment.status" class="shrink-0" />
+        <button @click="openRescheduleModal()"
+          class="px-3 py-1.5 text-xs text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Reschedule
+        </button>
+        <button @click="showCancelModal = true"
+          class="px-3 py-1.5 text-xs text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
+          Cancel
+        </button>
+      </div>
     </div>
 
-    <div class="max-w-3xl mx-auto">
+    <div class="flex items-center gap-2 flex-wrap justify-end">
       <SkeletonLoader v-if="loading" type="cards" :count="2" />
     </div>
 
     <template v-if="!loading && appointment">
       <!-- === Session Journey — full-width, always first === -->
-      <div v-if="['leave_office','in_progress','done','cancelled','rescheduled'].includes(appointment.status)" class="mb-5">
+      <div v-if="['leave_office', 'in_progress', 'done', 'cancelled', 'rescheduled'].includes(appointment.status)"
+        class="mb-5">
         <AppointmentJourney :appointment="appointment" />
       </div>
 
@@ -212,16 +224,96 @@
             </div>
           </div>
 
-          <!-- Actions -->
-          <div v-if="appointment.status === 'pending'" class="flex gap-3">
-            <button @click="showRescheduleModal = true"
-              class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              Reschedule
-            </button>
-            <button @click="showCancelModal = true"
-              class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
-              Cancel
-            </button>
+          <!-- Session Analytics -->
+          <div v-if="analyticsData" class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h2 class="text-sm font-semibold text-gray-900">Session Analytics</h2>
+
+            <!-- Health flag banner — critical -->
+            <div v-if="analyticsData.health?.severity === 'critical'"
+              class="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-700">
+              <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+                <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+              </div>
+            </div>
+            <!-- warning -->
+            <div v-else-if="analyticsData.health?.severity === 'warning'"
+              class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg text-sm text-amber-700">
+              <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+                <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+              </div>
+            </div>
+            <!-- info positive — subtle green/blue -->
+            <div v-else-if="['completed_on_time', 'in_session', 'en_route'].includes(analyticsData.health?.flag)"
+              class="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-sm text-emerald-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+              <p class="font-medium">{{ detailFlagLabel(analyticsData.health.flag) }}<span
+                  v-if="analyticsData.health.detail" class="font-normal text-xs text-emerald-600 ml-1">— {{
+                    analyticsData.health.detail }}</span></p>
+            </div>
+
+            <!-- Stats grid -->
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <dt class="text-xs text-gray-500">Scheduled Duration</dt>
+                <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.scheduled_duration_minutes)
+                }}</dd>
+              </div>
+              <div v-if="analyticsData.actual_duration_minutes !== null">
+                <dt class="text-xs text-gray-500">Actual Duration</dt>
+                <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.actual_duration_minutes) }}
+                </dd>
+              </div>
+              <div v-if="analyticsData.started_on_time !== null">
+                <dt class="text-xs text-gray-500">Started On Time</dt>
+                <dd
+                  :class="['font-medium mt-0.5', analyticsData.started_on_time ? 'text-emerald-600' : 'text-red-600']">
+                  {{ analyticsData.started_on_time ? 'Yes' : 'No' }}
+                </dd>
+              </div>
+              <div v-if="analyticsData.start_variance_minutes !== null && analyticsData.start_variance_minutes !== 0">
+                <dt class="text-xs text-gray-500">Start Variance</dt>
+                <dd
+                  :class="['font-medium mt-0.5', analyticsData.start_variance_minutes > 0 ? 'text-red-600' : 'text-emerald-600']">
+                  {{ analyticsData.start_variance_minutes > 0 ? `+${analyticsData.start_variance_minutes} min late` :
+                    `${Math.abs(analyticsData.start_variance_minutes)} min early` }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <div v-if="showFeedbackSection" class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-sm font-semibold text-gray-900">Client Feedback</h2>
+              <span v-if="hasFeedback" class="text-xs text-gray-500">{{ respondentFeedback.length }} responses</span>
+            </div>
+            <div v-if="!hasFeedback" class="text-sm text-gray-400">No feedback yet.</div>
+            <div v-else class="space-y-4">
+              <div v-for="item in respondentFeedback" :key="item.id"
+                   class="p-3 border border-gray-100 rounded-lg">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ item.respondent?.name || 'Respondent' }}</p>
+                    <p class="text-xs text-gray-500">{{ item.respondent?.email || '—' }}</p>
+                    <p v-if="item.respondent?.position || item.respondent?.phone_number" class="text-xs text-gray-400">
+                      <span v-if="item.respondent?.position">{{ item.respondent.position }}</span>
+                      <span v-if="item.respondent?.position && item.respondent?.phone_number" class="text-gray-300">·</span>
+                      <span v-if="item.respondent?.phone_number">{{ item.respondent.phone_number }}</span>
+                    </p>
+                  </div>
+                  <div class="text-xs text-gray-400 shrink-0">{{ formatFeedbackTimestamp(item.submitted_at || item.created_at) }}</div>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                  <StarRating :model-value="item.rating ?? 0" readonly />
+                  <span class="text-xs text-gray-500">{{ item.rating ?? 0 }}/5</span>
+                </div>
+                <p v-if="item.comment" class="text-sm text-gray-700 mt-2">{{ item.comment }}</p>
+                <p v-else class="text-xs text-gray-400 mt-2">No comment provided.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -312,16 +404,64 @@
           </div>
         </div>
 
-        <!-- Actions -->
-        <div v-if="appointment.status === 'pending'" class="flex gap-3">
-          <button @click="showRescheduleModal = true"
-            class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            Reschedule
-          </button>
-          <button @click="showCancelModal = true"
-            class="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors">
-            Cancel
-          </button>
+        <!-- Session Analytics -->
+        <div v-if="analyticsData" class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <h2 class="text-sm font-semibold text-gray-900">Session Analytics</h2>
+
+          <!-- Health flag banner — critical -->
+          <div v-if="analyticsData.health?.severity === 'critical'"
+            class="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-700">
+            <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+              <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+            </div>
+          </div>
+          <!-- warning -->
+          <div v-else-if="analyticsData.health?.severity === 'warning'"
+            class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg text-sm text-amber-700">
+            <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+              <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+            </div>
+          </div>
+          <!-- info positive — subtle green/blue -->
+          <div v-else-if="['completed_on_time', 'in_session', 'en_route'].includes(analyticsData.health?.flag)"
+            class="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-sm text-emerald-700">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <p class="font-medium">{{ detailFlagLabel(analyticsData.health.flag) }}<span
+                v-if="analyticsData.health.detail" class="font-normal text-xs text-emerald-600 ml-1">— {{
+                  analyticsData.health.detail }}</span></p>
+          </div>
+
+          <!-- Stats grid -->
+          <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Scheduled Duration</dt>
+              <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.scheduled_duration_minutes) }}
+              </dd>
+            </div>
+            <div v-if="analyticsData.actual_duration_minutes !== null">
+              <dt class="text-xs text-gray-500">Actual Duration</dt>
+              <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.actual_duration_minutes) }}
+              </dd>
+            </div>
+            <div v-if="analyticsData.started_on_time !== null">
+              <dt class="text-xs text-gray-500">Started On Time</dt>
+              <dd :class="['font-medium mt-0.5', analyticsData.started_on_time ? 'text-emerald-600' : 'text-red-600']">
+                {{ analyticsData.started_on_time ? 'Yes' : 'No' }}
+              </dd>
+            </div>
+            <div v-if="analyticsData.start_variance_minutes !== null && analyticsData.start_variance_minutes !== 0">
+              <dt class="text-xs text-gray-500">Start Variance</dt>
+              <dd
+                :class="['font-medium mt-0.5', analyticsData.start_variance_minutes > 0 ? 'text-red-600' : 'text-emerald-600']">
+                {{ analyticsData.start_variance_minutes > 0 ? `+${analyticsData.start_variance_minutes} min late` :
+                  `${Math.abs(analyticsData.start_variance_minutes)} min early` }}
+              </dd>
+            </div>
+          </dl>
         </div>
       </div>
     </template>
@@ -340,14 +480,14 @@
             <h3 class="text-lg font-semibold text-gray-900">Cancel Appointment</h3>
             <p class="text-sm text-gray-600">Are you sure you want to cancel this appointment?</p>
             <div>
-              <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason (optional)</label>
-              <textarea v-model="cancelReason" rows="3" placeholder="Enter reason..."
+              <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason *</label>
+              <textarea v-model="cancelReason" rows="3" required placeholder="Enter reason..."
                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
             </div>
             <div class="flex gap-3 justify-end">
               <button @click="showCancelModal = false"
                 class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Back</button>
-              <button @click="handleCancel" :disabled="cancelling"
+              <button @click="handleCancel" :disabled="cancelling || !cancelReason?.trim()"
                 class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60">
                 {{ cancelling ? 'Cancelling...' : 'Cancel Appointment' }}
               </button>
@@ -442,15 +582,15 @@
           </div>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason</label>
-          <input v-model="rescheduleForm.reschedule_reason" type="text" placeholder="Optional reason..."
+          <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason *</label>
+          <input v-model="rescheduleForm.reschedule_reason" type="text" required placeholder="Why are you rescheduling?"
             class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
         </div>
         <div v-if="rescheduleError" class="text-sm text-red-600">{{ rescheduleError }}</div>
         <div class="flex gap-3 justify-end">
           <button @click="showRescheduleModal = false"
             class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button @click="handleReschedule" :disabled="rescheduling"
+          <button @click="handleReschedule" :disabled="rescheduling || !rescheduleForm.reschedule_reason?.trim()"
             class="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
             {{ rescheduling ? 'Saving...' : 'Confirm' }}
           </button>
@@ -472,6 +612,8 @@ import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import AppointmentJourney from '@/modules/shared/components/AppointmentJourney.vue'
 import { useMap } from '@/modules/shared/composables/useMap.js'
+import StarRating from "@/modules/shared/components/StarRating.vue";
+import OnboardingPanelsDrawer from '@/modules/shared/components/OnboardingPanelsDrawer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -480,8 +622,10 @@ const { formatDateMed: formatDate, formatTime, formatTimeFromISO } = useDateTime
 
 const appointment = ref(null)
 const travelEstimates = ref(null)
+const analyticsData = ref(null)
 const startProofMedia = ref(null)
 const endProofMedia = ref(null)
+const respondentFeedback = ref(null)
 const loading = ref(true)
 const cancelling = ref(false)
 const showCancelModal = ref(false)
@@ -490,12 +634,39 @@ const showRescheduleModal = ref(false)
 const rescheduling = ref(false)
 const rescheduleError = ref(null)
 
+const hasFeedback = computed(() => Array.isArray(respondentFeedback.value) && respondentFeedback.value.length > 0)
+const showFeedbackSection = computed(() => !!appointment.value && (hasFeedback.value || appointment.value.status === 'completed'))
+
 const rescheduleForm = reactive({
   scheduled_date: '',
   scheduled_start_time: '',
   scheduled_end_time: '',
   reschedule_reason: ''
 })
+
+function normalizeDateForInput(value) {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const match = value.match(/^\d{4}-\d{2}-\d{2}/)
+    if (match) return match[0]
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return parsed.toISOString().slice(0, 10)
+}
+
+function normalizeTimeForInput(value) {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const match = value.match(/^\d{2}:\d{2}/)
+    if (match) return match[0]
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return parsed.toTimeString().slice(0, 5)
+}
 
 const mapContainer = ref(null)
 const fullscreenMapContainer = ref(null)
@@ -557,14 +728,30 @@ function estimateErrorMessage(reason) {
   return messages[reason] || 'Unable to estimate travel time.'
 }
 
+const FLAG_LABELS_DETAIL = { overdue: 'Overdue', starting_late: 'Starting Late', pending_too_long: 'Stale Pending', upcoming: 'Upcoming', late_to_client: 'Late to Client', en_route: 'En Route', running_overtime: 'Running Overtime', started_late: 'Started Late', in_session: 'In Session', completed_late: 'Ended Late', completed_on_time: 'On Time', cancelled: 'Cancelled', rescheduled: 'Rescheduled' }
+function detailFlagLabel(flag) { return FLAG_LABELS_DETAIL[flag] || flag }
+function formatMinutes(mins) {
+  if (!mins && mins !== 0) return '—'
+  if (mins < 60) return `${mins} min`
+  const h = Math.floor(mins / 60); const m = mins % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+function formatFeedbackTimestamp(iso) {
+  if (!iso) return '—'
+  return `${formatDate(iso)} · ${formatTimeFromISO(iso)}`
+}
+
 async function loadAppointment() {
   loading.value = true
   try {
     const response = await saleService.getAppointment(route.params.id)
     appointment.value = response.data
     travelEstimates.value = response.travel_estimates ?? null
+    analyticsData.value = response.analytics ?? null
     startProofMedia.value = response.start_proof ?? null
     endProofMedia.value = response.end_proof ?? null
+    respondentFeedback.value = response.respondent_feedback ?? null
   } catch {
     appointment.value = null
     travelEstimates.value = null
@@ -574,9 +761,13 @@ async function loadAppointment() {
 }
 
 async function handleCancel() {
+  if (!cancelReason.value?.trim()) {
+    toast.error('Reason is required.')
+    return
+  }
   cancelling.value = true
   try {
-    await saleService.cancelAppointment(appointment.value.id, cancelReason.value)
+    await saleService.cancelAppointment(appointment.value.id, cancelReason.value.trim())
     toast.success('Appointment cancelled.')
     showCancelModal.value = false
     cancelReason.value = ''
@@ -590,9 +781,16 @@ async function handleCancel() {
 
 async function handleReschedule() {
   rescheduleError.value = null
+  if (!rescheduleForm.reschedule_reason?.trim()) {
+    rescheduleError.value = 'Reason is required.'
+    return
+  }
   rescheduling.value = true
   try {
-    const result = await saleService.rescheduleAppointment(appointment.value.id, rescheduleForm)
+    const result = await saleService.rescheduleAppointment(appointment.value.id, {
+      ...rescheduleForm,
+      reschedule_reason: rescheduleForm.reschedule_reason.trim()
+    })
     toast.success('Appointment rescheduled.')
     showRescheduleModal.value = false
     router.push(`/sales/appointments/${result.data?.new_appointment_id}`)
@@ -601,6 +799,15 @@ async function handleReschedule() {
   } finally {
     rescheduling.value = false
   }
+}
+
+function openRescheduleModal() {
+  rescheduleError.value = null
+  rescheduleForm.scheduled_date = normalizeDateForInput(appointment.value?.scheduled_date)
+  rescheduleForm.scheduled_start_time = normalizeTimeForInput(appointment.value?.scheduled_start_time)
+  rescheduleForm.scheduled_end_time = normalizeTimeForInput(appointment.value?.scheduled_end_time)
+  rescheduleForm.reschedule_reason = appointment.value?.reschedule_reason || ''
+  showRescheduleModal.value = true
 }
 
 watch(currentEstimate, async (est) => {

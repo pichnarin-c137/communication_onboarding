@@ -5,7 +5,6 @@ export const saleService = {
 
   async getAppointments(params = {}) {
     const response = await api.get('/appointments', { params })
-    console
     return response.data
   },
 

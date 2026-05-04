@@ -150,13 +150,13 @@ const salesNavGroups = computed(() => [
       { to: '/sales/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
       { to: '/sales/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
       { to: '/sales/calendar', label: t('nav.calendar'), icon: CalendarDaysIcon },
-      {
-        label: t('nav.reports'),
-        icon: ChartBarIcon,
-        children: [
-          { to: '/sales/report/appointments', label: t('nav.appointmentReport'), icon: Circle },
-        ],
-      },
+      // {
+      //   label: t('nav.reports'),
+      //   icon: ChartBarIcon,
+      //   children: [  
+      //     { to: '/sales/report/appointments', label: t('nav.appointmentReport'), icon: Circle },
+      //   ],
+      // },
       {
         label: t('nav.configurations'),
         icon: Cog6ToothIcon,
