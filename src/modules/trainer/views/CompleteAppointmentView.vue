@@ -140,19 +140,19 @@
 
       <!--  Complete-specific fields  -->
       <template v-if="!isStartStep">
-        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <!-- <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
           <h2 class="text-sm font-semibold text-gray-900">Session Summary</h2>
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Number of Students *</label>
             <input v-model.number="form.student_count" type="number" min="0" required
               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
-          </div>
+          </div> -->
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Completion Notes</label>
             <textarea v-model="form.completion_notes" rows="3" placeholder="Summary of what was covered…"
               class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
           </div>
-        </div>
+        <!-- </div> -->
       </template>
 
       <!-- Error -->
@@ -206,7 +206,7 @@ const isStartStep = computed(() => route.query.step === 'start')
 const appt    = ref(null)
 const loading = ref(true)
 
-//  Camera 
+//  Camera
 const videoEl    = ref(null)
 const canvasEl   = ref(null)
 const cameraReady = ref(false)
@@ -290,7 +290,7 @@ async function getLocation() {
   }
 }
 
-//  Submit 
+//  Submit
 const submitting  = ref(false)
 const submitError = ref(null)
 

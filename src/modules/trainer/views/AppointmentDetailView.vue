@@ -8,11 +8,38 @@
           <ChevronLeftIcon class="w-5 h-5" />
         </button>
         <div class="min-w-0">
-          <h1 class="text-xl font-bold text-gray-900 truncate">{{ appt?.title || 'Appointment' }}</h1>
+          <h1 class="text-xl font-bold text-gray-900 truncate mt-1">{{ appt?.title || 'Appointment' }}</h1>
           <p class="text-sm text-gray-500 mt-0.5">{{ appt?.client?.company_name }}</p>
         </div>
       </div>
-      <StatusBadge v-if="appt" :status="appt.status" class="shrink-0" />
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <StatusBadge v-if="appt" :status="appt.status" class="shrink-0" />
+
+        <button v-if="appt && ['physical', 'hybrid'].includes(appt.location_type) && appt.status === 'pending'"
+          @click="handleLeaveOffice" :disabled="actionLoading"
+          class="px-3 py-1.5 text-xs font-semibold text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-60">
+          {{ actionLoading ? 'Processing...' : 'Leave Office' }}
+        </button>
+        <button
+          v-if="appt && ['pending', 'leave_office'].includes(appt.status) && (appt.location_type === 'online' || appt.status === 'leave_office')"
+          @click="openActionModal('start')"
+          class="px-3 py-1.5 text-xs font-semibold text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+          Start Appointment
+        </button>
+        <button v-if="appt && appt.status === 'in_progress'" @click="openActionModal('complete')"
+          class="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+          Complete Appointment
+        </button>
+        <button v-if="appt && appt.status === 'pending'" @click="openRescheduleModal"
+          class="px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Reschedule
+        </button>
+        <button v-if="appt && ['pending', 'leave_office', 'in_progress'].includes(appt.status)"
+          @click="showCancelModal = true"
+          class="px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+      </div>
     </div>
 
     <div class="max-w-3xl mx-auto">
@@ -20,6 +47,13 @@
     </div>
 
     <template v-if="!loading && appt">
+
+      <!-- === Session Journey — full-width, always first === -->
+      <div v-if="['leave_office', 'in_progress', 'done', 'cancelled', 'rescheduled'].includes(appt.status)"
+        class="mb-5">
+        <AppointmentJourney :appointment="appt" />
+      </div>
+
       <div v-if="hasTravelMap" class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
         <!-- isolate creates a stacking context so Leaflet z-indices stay contained -->
         <div class="lg:sticky lg:top-4 bg-white rounded-xl border border-gray-200 overflow-hidden relative isolate">
@@ -176,7 +210,7 @@
             </dl>
           </div>
 
-          <div class="bg-white rounded-xl border border-gray-200 p-5">
+          <!-- <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between mb-3">
               <h2 class="text-sm font-semibold text-gray-900">Students</h2>
               <button v-if="appt.status === 'in_progress'" @click="showAddStudentModal = true"
@@ -205,37 +239,98 @@
                 </div>
               </div>
             </div>
+          </div> -->
+
+          <!-- Session Analytics -->
+          <div v-if="analyticsData" class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h2 class="text-sm font-semibold text-gray-900">Session Analytics</h2>
+
+            <!-- Health flag banner — critical -->
+            <div v-if="analyticsData.health?.severity === 'critical'"
+              class="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-700">
+              <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+                <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+              </div>
+            </div>
+            <!-- warning -->
+            <div v-else-if="analyticsData.health?.severity === 'warning'"
+              class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg text-sm text-amber-700">
+              <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+                <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+              </div>
+            </div>
+            <!-- info positive — subtle green/blue -->
+            <div v-else-if="['completed_on_time', 'in_session', 'en_route'].includes(analyticsData.health?.flag)"
+              class="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-sm text-emerald-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+              <p class="font-medium">{{ detailFlagLabel(analyticsData.health.flag) }}<span
+                  v-if="analyticsData.health.detail" class="font-normal text-xs text-emerald-600 ml-1">— {{
+                    analyticsData.health.detail }}</span></p>
+            </div>
+
+            <!-- Stats grid -->
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <dt class="text-xs text-gray-500">Scheduled Duration</dt>
+                <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.scheduled_duration_minutes)
+                }}</dd>
+              </div>
+              <div v-if="analyticsData.actual_duration_minutes !== null">
+                <dt class="text-xs text-gray-500">Actual Duration</dt>
+                <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.actual_duration_minutes) }}
+                </dd>
+              </div>
+              <div v-if="analyticsData.started_on_time !== null">
+                <dt class="text-xs text-gray-500">Started On Time</dt>
+                <dd
+                  :class="['font-medium mt-0.5', analyticsData.started_on_time ? 'text-emerald-600' : 'text-red-600']">
+                  {{ analyticsData.started_on_time ? 'Yes' : 'No' }}
+                </dd>
+              </div>
+              <div v-if="analyticsData.start_variance_minutes !== null && analyticsData.start_variance_minutes !== 0">
+                <dt class="text-xs text-gray-500">Start Variance</dt>
+                <dd
+                  :class="['font-medium mt-0.5', analyticsData.start_variance_minutes > 0 ? 'text-red-600' : 'text-emerald-600']">
+                  {{ analyticsData.start_variance_minutes > 0 ? `+${analyticsData.start_variance_minutes} min late` :
+                    `${Math.abs(analyticsData.start_variance_minutes)} min early` }}
+                </dd>
+              </div>
+            </dl>
           </div>
 
-          <div class="space-y-3">
-            <button v-if="['physical', 'hybrid'].includes(appt.location_type) && appt.status === 'pending'"
-              @click="handleLeaveOffice" :disabled="actionLoading"
-              class="w-full py-3 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-60">
-              {{ actionLoading ? 'Processing...' : 'Leave Office' }}
-            </button>
-
-            <button
-              v-if="['pending', 'leave_office'].includes(appt.status) && (appt.location_type === 'online' || appt.status === 'leave_office')"
-              @click="openActionModal('start')"
-              class="w-full py-3 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors">
-              Start Appointment
-            </button>
-
-            <button v-if="appt.status === 'in_progress'" @click="openActionModal('complete')"
-              class="w-full py-3 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors">
-              Complete Appointment
-            </button>
-
-            <button v-if="['pending', 'leave_office'].includes(appt.status)" @click="openRescheduleModal"
-              class="w-full py-3 text-sm font-semibold text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-              Reschedule Appointment
-            </button>
-
-            <button v-if="['pending', 'leave_office', 'in_progress'].includes(appt.status)"
-              @click="showCancelModal = true"
-              class="w-full py-3 text-sm font-semibold text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-              Cancel Appointment
-            </button>
+          <div v-if="showFeedbackSection" class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-sm font-semibold text-gray-900">Client Feedback</h2>
+              <span v-if="hasFeedback" class="text-xs text-gray-500">{{ feedbackRespondentData.length }} responses</span>
+            </div>
+            <div v-if="!hasFeedback" class="text-sm text-gray-400">No feedback yet.</div>
+            <div v-else class="space-y-4">
+              <div v-for="item in feedbackRespondentData" :key="item.id"
+                   class="p-3 border border-gray-100 rounded-lg">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ item.respondent?.name || 'Respondent' }}</p>
+                    <p class="text-xs text-gray-500">{{ item.respondent?.email || '—' }}</p>
+                    <p v-if="item.respondent?.position || item.respondent?.phone_number" class="text-xs text-gray-400">
+                      <span v-if="item.respondent?.position">{{ item.respondent.position }}</span>
+                      <span v-if="item.respondent?.position && item.respondent?.phone_number" class="text-gray-300">·</span>
+                      <span v-if="item.respondent?.phone_number">{{ item.respondent.phone_number }}</span>
+                    </p>
+                  </div>
+                  <div class="text-xs text-gray-400 shrink-0">{{ formatFeedbackTimestamp(item.submitted_at || item.created_at) }}</div>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                  <StarRating :model-value="item.rating ?? 0" readonly />
+                  <span class="text-xs text-gray-500">{{ item.rating ?? 0 }}/5</span>
+                </div>
+                <p v-if="item.comment" class="text-sm text-gray-700 mt-2">{{ item.comment }}</p>
+                <p v-else class="text-xs text-gray-400 mt-2">No comment provided.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -265,35 +360,104 @@
           </dl>
         </div>
 
-        <div class="space-y-3">
-          <button v-if="['physical', 'hybrid'].includes(appt.location_type) && appt.status === 'pending'"
-            @click="handleLeaveOffice" :disabled="actionLoading"
-            class="w-full py-3 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-60">
-            {{ actionLoading ? 'Processing...' : 'Leave Office' }}
-          </button>
+        <!-- Session Analytics -->
+        <div v-if="analyticsData" class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+          <h2 class="text-sm font-semibold text-gray-900">Session Analytics</h2>
 
-          <button
-            v-if="['pending', 'leave_office'].includes(appt.status) && (appt.location_type === 'online' || appt.status === 'leave_office')"
-            @click="openActionModal('start')"
-            class="w-full py-3 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors">
-            Start Appointment
-          </button>
+          <!-- Health flag banner — critical -->
+          <div v-if="analyticsData.health?.severity === 'critical'"
+            class="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-sm text-red-700">
+            <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+              <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+            </div>
+          </div>
+          <!-- warning -->
+          <div v-else-if="analyticsData.health?.severity === 'warning'"
+            class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-lg text-sm text-amber-700">
+            <ExclamationTriangleIcon class="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p class="font-semibold">{{ detailFlagLabel(analyticsData.health.flag) }}</p>
+              <p v-if="analyticsData.health.detail" class="text-xs mt-0.5">{{ analyticsData.health.detail }}</p>
+            </div>
+          </div>
+          <!-- info positive — subtle green/blue -->
+          <div v-else-if="['completed_on_time', 'in_session', 'en_route'].includes(analyticsData.health?.flag)"
+            class="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-sm text-emerald-700">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <p class="font-medium">{{ detailFlagLabel(analyticsData.health.flag) }}<span
+                v-if="analyticsData.health.detail" class="font-normal text-xs text-emerald-600 ml-1">— {{
+                  analyticsData.health.detail }}</span></p>
+          </div>
 
-          <button v-if="appt.status === 'in_progress'" @click="openActionModal('complete')"
-            class="w-full py-3 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors">
-            Complete Appointment
-          </button>
+          <!-- Stats grid -->
+          <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Scheduled Duration</dt>
+              <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.scheduled_duration_minutes) }}
+              </dd>
+            </div>
+            <div v-if="analyticsData.actual_duration_minutes !== null">
+              <dt class="text-xs text-gray-500">Actual Duration</dt>
+              <dd class="font-medium text-gray-900 mt-0.5">{{ formatMinutes(analyticsData.actual_duration_minutes) }}
+              </dd>
+            </div>
+            <div v-if="analyticsData.started_on_time !== null">
+              <dt class="text-xs text-gray-500">Started On Time</dt>
+              <dd :class="['font-medium mt-0.5', analyticsData.started_on_time ? 'text-emerald-600' : 'text-red-600']">
+                {{ analyticsData.started_on_time ? 'Yes' : 'No' }}
+              </dd>
+            </div>
+            <div v-if="analyticsData.start_variance_minutes !== null && analyticsData.start_variance_minutes !== 0">
+              <dt class="text-xs text-gray-500">Start Variance</dt>
+              <dd
+                :class="['font-medium mt-0.5', analyticsData.start_variance_minutes > 0 ? 'text-red-600' : 'text-emerald-600']">
+                {{ analyticsData.start_variance_minutes > 0 ? `+${analyticsData.start_variance_minutes} min late` :
+                  `${Math.abs(analyticsData.start_variance_minutes)} min early` }}
+              </dd>
+            </div>
+          </dl>
+        </div>
 
-          <button v-if="['pending', 'leave_office'].includes(appt.status)" @click="openRescheduleModal"
-            class="w-full py-3 text-sm font-semibold text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-            Reschedule Appointment
-          </button>
-
-          <button v-if="['pending', 'leave_office', 'in_progress'].includes(appt.status)"
-            @click="showCancelModal = true"
-            class="w-full py-3 text-sm font-semibold text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-            Cancel Appointment
-          </button>
+        <div v-if="showFeedbackSection" class="bg-white rounded-xl border border-gray-200 p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-gray-900">Client Feedback</h2>
+            <div class="flex items-center gap-3">
+              <span v-if="hasFeedback" class="text-xs text-gray-500">{{ feedbackRespondentData.length }}
+                responses</span>
+              <button v-if="hasFeedback && feedbackRespondentData.length > visibleFeedback.length"
+                class="text-xs text-primary hover:underline" @click="showPanelDrawer = true">View all responses</button>
+            </div>
+          </div>
+          <div v-if="!hasFeedback" class="text-sm text-gray-400">No feedback yet.</div>
+          <div v-else class="space-y-4">
+            <div v-for="item in visibleFeedback" :key="item.id" class="p-3 border border-gray-100 rounded-lg">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate">{{ item.respondent?.name || 'Respondent' }}</p>
+                  <p class="text-xs text-gray-500">{{ item.respondent?.email || '—' }}</p>
+                  <p v-if="item.respondent?.position || item.respondent?.phone_number" class="text-xs text-gray-400">
+                    <span v-if="item.respondent?.position">{{ item.respondent.position }}</span>
+                    <span v-if="item.respondent?.position && item.respondent?.phone_number"
+                      class="text-gray-300">·</span>
+                    <span v-if="item.respondent?.phone_number">{{ item.respondent.phone_number }}</span>
+                  </p>
+                </div>
+                <div class="text-xs text-gray-400 shrink-0">{{ formatFeedbackTimestamp(item.submitted_at ||
+                  item.created_at)
+                }}</div>
+              </div>
+              <div class="flex items-center gap-2 mt-2">
+                <StarRating :model-value="item.rating ?? 0" readonly />
+                <span class="text-xs text-gray-500">{{ item.rating ?? 0 }}/5</span>
+              </div>
+              <p v-if="item.comment" class="text-sm text-gray-700 mt-2">{{ item.comment }}</p>
+              <p v-else class="text-xs text-gray-400 mt-2">No comment provided.</p>
+            </div>
+          </div>
+          <OnboardingPanelsDrawer v-if="appt?.onboarding" :open="showPanelDrawer" :onboarding-id="appt.onboarding.id"
+            initial-section="feedback" @close="showPanelDrawer = false" />
         </div>
       </div>
     </template>
@@ -420,19 +584,19 @@
             </div>
 
             <template v-if="!isStartAction">
-              <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+              <!-- <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
                 <h2 class="text-sm font-semibold text-gray-900">Session Summary</h2>
                 <div>
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Number of Students *</label>
                   <input v-model.number="actionForm.student_count" type="number" min="0" required
                     class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1.5">Completion Notes</label>
-                  <textarea v-model="actionForm.completion_notes" rows="3" placeholder="Summary of what was covered…"
-                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
-                </div>
+                </div> -->
+              <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">Completion Notes</label>
+                <textarea v-model="actionForm.completion_notes" rows="3" placeholder="Summary of what was covered…"
+                  class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
               </div>
+              <!-- </div> -->
             </template>
 
             <div v-if="actionSubmitError"
@@ -488,8 +652,9 @@
               </div>
 
               <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason</label>
-                <textarea v-model="rescheduleForm.reschedule_reason" rows="3" placeholder="Why are you rescheduling?"
+                <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason *</label>
+                <textarea v-model="rescheduleForm.reschedule_reason" rows="3" required
+                  placeholder="Why are you rescheduling?"
                   class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
               </div>
             </div>
@@ -500,7 +665,7 @@
               <button @click="closeRescheduleModal"
                 class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
               <button @click="handleReschedule"
-                :disabled="rescheduling || !rescheduleForm.scheduled_date || !rescheduleForm.scheduled_start_time || !rescheduleForm.scheduled_end_time"
+                :disabled="rescheduling || !rescheduleForm.scheduled_date || !rescheduleForm.scheduled_start_time || !rescheduleForm.scheduled_end_time || !rescheduleForm.reschedule_reason?.trim()"
                 class="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
                 {{ rescheduling ? 'Rescheduling...' : 'Confirm Reschedule' }}
               </button>
@@ -519,14 +684,14 @@
             <h3 class="text-lg font-semibold text-gray-900">Cancel Appointment</h3>
             <p class="text-sm text-gray-600">Are you sure you want to cancel this appointment?</p>
             <div>
-              <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason (optional)</label>
-              <textarea v-model="cancelReason" rows="3" placeholder="Enter reason..."
+              <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason *</label>
+              <textarea v-model="cancelReason" rows="3" required placeholder="Enter reason..."
                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none"></textarea>
             </div>
             <div class="flex gap-3 justify-end">
               <button @click="showCancelModal = false"
                 class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Back</button>
-              <button @click="handleCancel" :disabled="actionLoading"
+              <button @click="handleCancel" :disabled="actionLoading || !cancelReason?.trim()"
                 class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60">
                 {{ actionLoading ? 'Cancelling...' : 'Cancel Appointment' }}
               </button>
@@ -595,6 +760,9 @@ import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import { useTrainerTracking } from '@/modules/shared/composables/useTrainerTracking.js'
 import { useMap } from '@/modules/shared/composables/useMap.js'
+import StarRating from '@/modules/shared/components/StarRating.vue'
+import OnboardingPanelsDrawer from '@/modules/shared/components/OnboardingPanelsDrawer.vue'
+import AppointmentJourney from "@/modules/shared/components/AppointmentJourney.vue";
 
 const route = useRoute()
 const router = useRouter()
@@ -604,6 +772,10 @@ const { startTracking, stopTracking } = useTrainerTracking()
 
 const appt = ref(null)
 const travelEstimates = ref(null)
+const analyticsData = ref(null)
+const feedbackRespondentData = ref(null)
+const showPanelDrawer = ref(false)
+const visibleFeedback = computed(() => (Array.isArray(feedbackRespondentData.value) ? feedbackRespondentData.value.slice(0, 2) : []))
 const loading = ref(true)
 const actionLoading = ref(false)
 const showActionModal = ref(false)
@@ -659,12 +831,23 @@ const studentError = ref(null)
 const hasTravelMap = computed(() => !!currentEstimate.value)
 const trainerPosition = computed(() => travelEstimates.value?.trainer_position ?? null)
 const currentEstimate = computed(() => travelEstimates.value?.current ?? null)
+const hasFeedback = computed(() => Array.isArray(feedbackRespondentData.value) && feedbackRespondentData.value.length > 0)
+const showFeedbackSection = computed(() => !!appt.value && (hasFeedback.value || appt.value.status === 'completed'))
 const trainerStatusDot = computed(() => {
   const s = trainerPosition.value?.status
   if (s === 'at_office') return 'bg-blue-500'
   if (s === 'traveling') return 'bg-amber-500'
   if (s === 'active') return 'bg-green-500'
   return 'bg-gray-400'
+})
+
+const statusLabel = computed(() => appt.value?.status ? String(appt.value.status).replace(/_/g, ' ') : 'Unknown')
+const statusBannerClass = computed(() => {
+  const s = appt.value?.status
+  if (['completed', 'in_progress'].includes(s)) return 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+  if (['pending', 'leave_office'].includes(s)) return 'bg-amber-50 text-amber-700 border border-amber-100'
+  if (['cancelled', 'rescheduled'].includes(s)) return 'bg-red-50 text-red-700 border border-red-100'
+  return 'bg-gray-50 text-gray-600 border border-gray-200'
 })
 
 function resetActionForm() {
@@ -796,6 +979,8 @@ async function load() {
     const response = await trainerService.getAppointment(route.params.id)
     appt.value = response.data
     travelEstimates.value = response.travel_estimates ?? null
+    analyticsData.value = response.analytics ?? null
+    feedbackRespondentData.value = response.respondent_feedback ?? null
   } catch {
     appt.value = null
     travelEstimates.value = null
@@ -838,9 +1023,16 @@ async function submitAction() {
 
 async function handleReschedule() {
   rescheduleError.value = null
+  if (!rescheduleForm.reschedule_reason?.trim()) {
+    rescheduleError.value = 'Reason is required.'
+    return
+  }
   rescheduling.value = true
   try {
-    await trainerService.rescheduleAppointment(appt.value.id, rescheduleForm)
+    await trainerService.rescheduleAppointment(appt.value.id, {
+      ...rescheduleForm,
+      reschedule_reason: rescheduleForm.reschedule_reason.trim()
+    })
     toast.success('Appointment rescheduled.')
     closeRescheduleModal()
     await load()
@@ -878,6 +1070,20 @@ function computeSessionDuration() {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
+const FLAG_LABELS_DETAIL = { overdue: 'Overdue', starting_late: 'Starting Late', pending_too_long: 'Stale Pending', upcoming: 'Upcoming', late_to_client: 'Late to Client', en_route: 'En Route', running_overtime: 'Running Overtime', started_late: 'Started Late', in_session: 'In Session', completed_late: 'Ended Late', completed_on_time: 'On Time', cancelled: 'Cancelled', rescheduled: 'Rescheduled' }
+function detailFlagLabel(flag) { return FLAG_LABELS_DETAIL[flag] || flag }
+function formatMinutes(mins) {
+  if (!mins && mins !== 0) return '—'
+  if (mins < 60) return `${mins} min`
+  const h = Math.floor(mins / 60); const m = mins % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+function formatFeedbackTimestamp(iso) {
+  if (!iso) return '—'
+  return `${formatDate(iso)} · ${formatTimeFromISO(iso)}`
+}
+
 async function handleLeaveOffice() {
   actionLoading.value = true
   try {
@@ -901,9 +1107,13 @@ async function handleLeaveOffice() {
 }
 
 async function handleCancel() {
+  if (!cancelReason.value?.trim()) {
+    toast.error('Reason is required.')
+    return
+  }
   actionLoading.value = true
   try {
-    await trainerService.cancelAppointment(appt.value.id, cancelReason.value)
+    await trainerService.cancelAppointment(appt.value.id, cancelReason.value.trim())
     toast.success('Appointment cancelled.')
     stopTracking()
     showCancelModal.value = false
@@ -913,33 +1123,6 @@ async function handleCancel() {
     toast.error(extractErrorMessage(err))
   } finally {
     actionLoading.value = false
-  }
-}
-
-async function markAttendance(studentId, status) {
-  try {
-    await trainerService.markAttendance(appt.value.id, studentId, status)
-    await load()
-  } catch (err) {
-    toast.error(err.response?.data?.message || 'Failed to mark attendance.')
-  }
-}
-
-async function submitStudents() {
-  studentError.value = null
-  const valid = newStudents.value.filter(s => s.name && s.phone_number)
-  if (!valid.length) { studentError.value = 'At least one student with name and phone required.'; return }
-  addingStudents.value = true
-  try {
-    await trainerService.addStudents(appt.value.id, valid)
-    toast.success('Students added.')
-    showAddStudentModal.value = false
-    newStudents.value = [{ name: '', phone_number: '', profession: '' }]
-    await load()
-  } catch (err) {
-    studentError.value = extractErrorMessage(err)
-  } finally {
-    addingStudents.value = false
   }
 }
 

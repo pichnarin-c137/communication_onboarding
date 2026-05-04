@@ -7,20 +7,10 @@
         <p class="text-sm text-gray-500 mt-0.5">View and manage your assigned appointments</p>
       </div>
       <div class="flex items-center gap-2">
-        <StatusFilterToggle
-          :all-statuses="allStatuses"
-          :hidden-count="hiddenStatusCount"
-          :is-visible="isStatusVisible"
-          @toggle="toggleStatus"
-          @reset="resetStatuses"
-        />
-        <ColumnsToggle
-          :all-columns="allColumns"
-          :hidden-count="hiddenCount"
-          :is-visible="isVisible"
-          @toggle="toggleColumn"
-          @reset="resetColumns"
-        />
+        <StatusFilterToggle :all-statuses="allStatuses" :hidden-count="hiddenStatusCount" :is-visible="isStatusVisible"
+          @toggle="toggleStatus" @reset="resetStatuses" />
+        <ColumnsToggle :all-columns="allColumns" :hidden-count="hiddenCount" :is-visible="isVisible"
+          @toggle="toggleColumn" @reset="resetColumns" />
         <button @click="exportCSV"
           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
           <ArrowDownTrayIcon class="w-4 h-4" />
@@ -38,8 +28,8 @@
     <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 space-y-3">
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold text-gray-700">Filters</h2>
-        <button v-if="hasActiveFilters" @click="resetFilters"
-          class="text-xs text-primary hover:underline">Reset all</button>
+        <button v-if="hasActiveFilters" @click="resetFilters" class="text-xs text-primary hover:underline">Reset
+          all</button>
       </div>
       <!-- Row 1: Dropdowns grid -->
       <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
@@ -91,10 +81,97 @@
       </div>
     </div>
 
+    <!-- Analytics Panel -->
+    <div v-if="analytics && !loading" class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <!-- Alert strip -->
+      <div v-if="analytics.health_summary?.critical > 0 || analytics.health_summary?.warning > 0"
+        class="flex items-center gap-2.5 px-4 py-2 border-b border-gray-100 text-xs font-medium"
+        :class="analytics.health_summary.critical > 0 ? 'text-red-600' : 'text-amber-600'">
+        <span class="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse"
+          :class="analytics.health_summary.critical > 0 ? 'bg-red-500' : 'bg-amber-500'"></span>
+        <span v-if="analytics.health_summary.critical > 0">
+          {{ analytics.health_summary.critical }} appointment{{ analytics.health_summary.critical > 1 ? 's' : '' }} need
+          immediate attention
+        </span>
+        <span v-else>
+          {{ analytics.health_summary.warning }} appointment{{ analytics.health_summary.warning > 1 ? 's' : '' }} need
+          attention
+        </span>
+      </div>
+
+      <div class="px-4 py-3">
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">My Appointment Overview</p>
+
+        <!-- Status stats row -->
+        <div class="flex divide-x divide-gray-100 mb-3">
+          <div class="flex-1 pr-4">
+            <p class="text-xl font-semibold text-gray-900 leading-none">{{ analyticsTotal }}</p>
+            <p class="text-[11px] text-gray-400 mt-1">Total <span class="text-gray-300 mx-1">·</span> {{
+              analytics.this_month }} this month</p>
+          </div>
+          <div class="flex-1 px-4">
+            <p class="text-xl font-semibold leading-none"
+              :class="(analytics.completion_rate ?? 0) >= 70 ? 'text-emerald-600' : 'text-amber-600'">
+              {{ analytics.by_status?.done ?? 0 }}
+            </p>
+            <p class="text-[11px] text-gray-400 mt-1">Completed <span class="text-gray-300 mx-1">·</span>
+              <span :class="(analytics.completion_rate ?? 0) >= 70 ? 'text-emerald-600' : 'text-amber-500'">
+                {{ analytics.completion_rate ?? '—' }}%
+              </span>
+            </p>
+          </div>
+          <div class="flex-1 px-4">
+            <p class="text-xl font-semibold text-gray-900 leading-none">{{ analytics.by_status?.pending ?? 0 }}</p>
+            <p class="text-[11px] text-gray-400 mt-1">Pending <span class="text-gray-300 mx-1">·</span> {{
+              analytics.today }} today</p>
+          </div>
+          <div class="flex-1 px-4">
+            <p class="text-xl font-semibold text-gray-900 leading-none">{{ (analytics.by_status?.in_progress ?? 0) +
+              (analytics.by_status?.leave_office ?? 0) }}</p>
+            <p class="text-[11px] text-gray-400 mt-1">Active now</p>
+          </div>
+          <div class="flex-1 px-4">
+            <p class="text-xl font-semibold leading-none"
+              :class="(analytics.by_status?.cancelled ?? 0) > 0 ? 'text-red-500' : 'text-gray-900'">
+              {{ analytics.by_status?.cancelled ?? 0 }}
+            </p>
+            <p class="text-[11px] text-gray-400 mt-1">Cancelled</p>
+          </div>
+          <div class="flex-1 pl-4">
+            <p class="text-xl font-semibold text-gray-900 leading-none">{{ analytics.by_status?.rescheduled ?? 0 }}</p>
+            <p class="text-[11px] text-gray-400 mt-1">Rescheduled</p>
+          </div>
+        </div>
+
+        <!-- Trainer performance row -->
+        <div v-if="analytics.total_students_trained !== undefined"
+          class="flex items-center justify-between pt-2.5 border-t border-gray-100">
+          <div class="flex items-center gap-1">
+            <span class="text-[11px] text-gray-400">Students Trained</span>
+            <span class="text-sm font-semibold text-gray-800 ml-1.5">{{ analytics.total_students_trained }}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="text-[11px] text-gray-400">Avg Duration</span>
+            <span class="text-sm font-semibold text-gray-800 ml-1.5">
+              {{ analytics.avg_session_duration_minutes ? `${analytics.avg_session_duration_minutes}m` : '—' }}
+            </span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="text-[11px] text-gray-400">On-Time Rate</span>
+            <span class="text-sm font-semibold ml-1.5"
+              :class="analytics.on_time_rate >= 80 ? 'text-emerald-600' : analytics.on_time_rate >= 60 ? 'text-amber-600' : 'text-red-500'">
+              {{ analytics.on_time_rate !== null ? `${analytics.on_time_rate}%` : '—' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Table -->
     <SkeletonLoader v-if="loading" type="table" :count="5" />
 
-    <div v-else-if="visibleAppointments.length === 0" class="text-center py-16 bg-white rounded-xl border border-gray-200">
+    <div v-else-if="visibleAppointments.length === 0"
+      class="text-center py-16 bg-white rounded-xl border border-gray-200">
       <CalendarDaysIcon class="w-12 h-12 text-gray-300 mx-auto mb-4" />
       <p class="text-sm font-semibold text-gray-700">No appointments found</p>
       <p class="text-xs text-gray-500 mt-1">
@@ -125,12 +202,20 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Title</th>
-            <th v-if="isVisible('code')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>
-            <th v-if="isVisible('client')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
-            <th v-if="isVisible('type')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-            <th v-if="isVisible('location')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Location</th>
-            <th v-if="isVisible('due_date')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date / Time</th>
-            <th v-if="isVisible('status')" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th v-if="isVisible('code')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Code</th>
+            <th v-if="isVisible('client')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client</th>
+            <th v-if="isVisible('type')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
+            <th v-if="isVisible('location')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Location</th>
+            <th v-if="isVisible('due_date')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date / Time</th>
+            <th v-if="isVisible('status')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+            <th v-if="isVisible('feedback')"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Feedback</th>
             <th class="px-4 py-3 w-8"></th>
           </tr>
         </thead>
@@ -140,11 +225,14 @@
             @click="router.push(`/trainer/appointments/${appt.id}`)">
             <td class="px-4 py-3">
               <p class="font-medium text-gray-900 max-w-[180px] truncate"
-                @mouseenter="showTitleTooltip($event, appt.title || '—')"
-                @mousemove="moveTitleTooltip"
+                @mouseenter="showTitleTooltip($event, appt.title || '—')" @mousemove="moveTitleTooltip"
                 @mouseleave="hideTitleTooltip">
                 {{ appt.title || '—' }}
               </p>
+              <span v-if="appt.health && appt.health.severity !== 'info'"
+                :class="['mt-0.5 inline-flex text-[10px] font-medium px-1.5 py-0.5 rounded-full', healthBadgeClass(appt.health)]">
+                {{ healthFlagLabel(appt.health.flag) }}
+              </span>
             </td>
             <td v-if="isVisible('code')" class="px-4 py-3 text-gray-600">{{ appt.appointment_code || '—' }}</td>
             <td v-if="isVisible('client')" class="px-4 py-3 text-gray-600" :title="appt.client?.company_name || '—'">
@@ -159,16 +247,24 @@
             <td v-if="isVisible('location')" class="px-4 py-3">
               <span :class="['text-xs font-medium px-2.5 py-0.5 rounded-full capitalize',
                 appt.location_type === 'online' ? 'bg-blue-50 text-blue-600'
-                : appt.location_type === 'hybrid' ? 'bg-purple-50 text-purple-600'
-                : 'bg-gray-100 text-gray-600']">
+                  : appt.location_type === 'hybrid' ? 'bg-purple-50 text-purple-600'
+                    : 'bg-gray-100 text-gray-600']">
                 {{ appt.location_type || '—' }}
               </span>
             </td>
             <td v-if="isVisible('due_date')" class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
               {{ formatDate(appt.scheduled_date) }}<br>
-              {{ formatTime(appt.scheduled_start_time) }}
+              {{ formatTime(appt.scheduled_start_time) }} - {{ formatTime(appt.scheduled_end_time) }}
             </td>
-            <td v-if="isVisible('status')" class="px-4 py-3"><StatusBadge :status="appt.status" /></td>
+            <td v-if="isVisible('status')" class="px-4 py-3">
+              <StatusBadge :status="appt.status" />
+            </td>
+            <td v-if="isVisible('feedback')" class="px-4 py-3">
+              <div v-if="normalizedFeedback(appt) !== null" class="min-w-[120px]">
+                <StarRating :model-value="normalizedFeedback(appt)" readonly class="scale-[0.48] origin-left" />
+              </div>
+              <span v-else class="text-xs text-gray-400">—</span>
+            </td>
             <td class="px-4 py-3 text-right">
               <ChevronRightIcon class="w-4 h-4 text-gray-400" />
             </td>
@@ -209,6 +305,7 @@ import { downloadCSV } from '@/modules/shared/composables/useCSVExport.js'
 import { useTableColumns } from '@/modules/shared/composables/useTableColumns.js'
 import { useStatusFilter } from '@/modules/shared/composables/useStatusFilter.js'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
+import StarRating from '@/modules/shared/components/StarRating.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
 import ColumnsToggle from '@/modules/shared/components/ColumnsToggle.vue'
 import StatusFilterToggle from '@/modules/shared/components/StatusFilterToggle.vue'
@@ -228,6 +325,7 @@ const allColumns = [
   { key: 'location', label: 'Location' },
   { key: 'due_date', label: 'Date / Time' },
   { key: 'status', label: 'Status' },
+  { key: 'feedback', label: 'Feedback' },
 ]
 const { isVisible, toggleColumn, resetColumns, hiddenCount } = useTableColumns('trainer-appointment', allColumns)
 
@@ -243,6 +341,11 @@ const { isStatusVisible, toggleStatus, resetStatuses, hiddenCount: hiddenStatusC
 
 const loading = ref(true)
 const appointments = ref([])
+const analytics = ref(null)
+const analyticsTotal = computed(() => {
+  if (!analytics.value?.by_status) return 0
+  return Object.values(analytics.value.by_status).reduce((a, b) => a + b, 0)
+})
 const meta = ref({ total: 0, per_page: 15, current_page: 1, last_page: 1, from: 0, to: 0 })
 const statusFilter = ref('')
 const typeFilter = ref('')
@@ -260,6 +363,17 @@ const hasActiveFilters = computed(() =>
   !!dateFrom.value || !!dateTo.value || !!searchQuery.value
 )
 
+const FLAG_LABELS = { overdue: 'Overdue', starting_late: 'Starting Late', pending_too_long: 'Stale', upcoming: 'Upcoming', late_to_client: 'Late to Client', en_route: 'En Route', running_overtime: 'Overtime', started_late: 'Started Late', in_session: 'In Session', completed_late: 'Ended Late', completed_on_time: 'On Time', cancelled: 'Cancelled', rescheduled: 'Rescheduled' }
+function healthBadgeClass(h) { return h?.severity === 'critical' ? 'bg-red-100 text-red-700' : h?.severity === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500' }
+function healthFlagLabel(flag) { return FLAG_LABELS[flag] || flag }
+
+function normalizedFeedback(appt) {
+  if (appt?.status !== 'done') return null
+  const rating = Number(appt?.overall_rating)
+  if (!Number.isFinite(rating) || rating <= 0) return null
+  return Math.min(5, Math.max(0, rating))
+}
+
 async function load(page = 1) {
   loading.value = true
   try {
@@ -273,6 +387,7 @@ async function load(page = 1) {
     const response = await trainerService.getAppointments(params)
     appointments.value = response.data || []
     if (response.meta) meta.value = response.meta
+    analytics.value = response.analytics || null
   } catch {
     appointments.value = []
   } finally {
@@ -314,7 +429,7 @@ function moveTitleTooltip(event) {
 function hideTitleTooltip() { tooltip.value.visible = false }
 
 function exportCSV() {
-  const headers = ['Title', 'Code', 'Client', 'Type', 'Location', 'Date', 'Start Time', 'Status']
+  const headers = ['Title', 'Code', 'Client', 'Type', 'Location', 'Date', 'Start Time', 'Status', 'Feedback Rating']
   const rows = visibleAppointments.value.map(a => [
     a.title || '',
     a.appointment_code || '',
@@ -323,7 +438,8 @@ function exportCSV() {
     a.location_type || '',
     a.scheduled_date || '',
     a.scheduled_start_time || '',
-    a.status || ''
+    a.status || '',
+    normalizedFeedback(a) !== null ? normalizedFeedback(a).toFixed(1) : ''
   ])
   downloadCSV([headers, ...rows], `appointments_${new Date().toISOString().slice(0, 10)}.csv`)
 }

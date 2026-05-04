@@ -84,10 +84,10 @@
                     </button>
 
                     <!-- Add Students: in_progress -->
-                    <button v-if="canComplete" @click="mode = 'students'"
+                    <!-- <button v-if="canComplete" @click="mode = 'students'"
                       class="w-full py-2.5 text-sm font-medium text-emerald-700 border border-emerald-300 rounded-xl hover:bg-emerald-50 transition-colors">
                       Add / Mark Students
-                    </button>
+                    </button> -->
                   </div>
 
                   <!-- Secondary actions -->
@@ -154,11 +154,11 @@
               <ActionPanel v-if="mode === 'complete'" title="Complete Appointment" @back="mode = 'view'">
                 <ProofCapture label="End proof photo *" v-model:media-id="action.proofMedia" />
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" class="mt-3" />
-                <div class="mt-3">
+                <!-- <div class="mt-3">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Number of students *</label>
                   <input v-model.number="action.studentCount" type="number" min="0"
                     class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
-                </div>
+                </div> -->
                 <div class="mt-3">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Notes (optional)</label>
                   <textarea v-model="action.notes" rows="2"
@@ -263,7 +263,7 @@
                   <button v-if="canCancel" @click="mode = 'cancel'"
                     class="py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">Cancel</button>
                 </div>
-              </div>
+              </div>  
             </template>
 
             <!--  SHARED ACTION PANELS (sale + trainer)  -->
@@ -271,14 +271,14 @@
             <!--  CANCEL sub-panel  -->
             <ActionPanel v-if="mode === 'cancel'" title="Cancel Appointment" @back="mode = 'view'">
               <p class="text-xs text-gray-500 mb-3">This action cannot be undone.</p>
-              <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason (optional)</label>
-              <input v-model="action.reason" type="text" placeholder="e.g. Client rescheduled"
+              <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason *</label>
+              <input v-model="action.reason" type="text" required placeholder="e.g. Client rescheduled"
                 class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
               <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
               <div class="flex gap-2 mt-4">
                 <button @click="mode = 'view'"
                   class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                <button @click="doCancel" :disabled="actionLoading"
+                <button @click="doCancel" :disabled="actionLoading || !action.reason?.trim()"
                   class="flex-1 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 disabled:opacity-60">
                   {{ actionLoading ? 'Cancelling...' : 'Confirm Cancel' }}
                 </button>
@@ -306,8 +306,8 @@
                   </div>
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason</label>
-                  <input v-model="action.reason" type="text" placeholder="Optional"
+                  <label class="block text-xs font-medium text-gray-700 mb-1.5">Reason *</label>
+                  <input v-model="action.reason" type="text" required placeholder="e.g. Client rescheduled"
                     class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm" />
                 </div>
               </div>
@@ -315,7 +315,7 @@
               <div class="flex gap-2 mt-4">
                 <button @click="mode = 'view'"
                   class="flex-1 py-2.5 text-sm text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Back</button>
-                <button @click="doReschedule" :disabled="actionLoading"
+                <button @click="doReschedule" :disabled="actionLoading || !action.reason?.trim()"
                   class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl disabled:opacity-60">
                   {{ actionLoading ? 'Saving...' : 'Confirm' }}
                 </button>
@@ -692,7 +692,7 @@ const canStart = computed(() =>
 )
 const canComplete = computed(() => appt.value?.status === 'in_progress')
 const canEdit = computed(() => appt.value?.status === 'pending')
-const canReschedule = computed(() => ['pending', 'leave_office'].includes(appt.value?.status))
+const canReschedule = computed(() => appt.value?.status === 'pending')
 const canCancel = computed(() => {
   if (!['pending', 'leave_office', 'in_progress'].includes(appt.value?.status)) return false
   if (authStore.isTrainer && appt.value?.creator_id !== authStore.userId) return false
@@ -891,10 +891,14 @@ async function doComplete() {
 }
 
 async function doCancel() {
+  if (!action.reason?.trim()) {
+    actionError.value = 'Reason is required.'
+    return
+  }
   actionLoading.value = true; actionError.value = null
   try {
     const service = authStore.isTrainer ? trainerService : saleService
-    await service.cancelAppointment(appt.value.id, action.reason)
+    await service.cancelAppointment(appt.value.id, action.reason.trim())
     toast.success('Appointment cancelled.')
     await reloadAndRefresh()
   } catch (e) {
@@ -907,6 +911,10 @@ async function doReschedule() {
     actionError.value = 'Date and times are required.'
     return
   }
+  if (!action.reason?.trim()) {
+    actionError.value = 'Reason is required.'
+    return
+  }
   actionLoading.value = true; actionError.value = null
   try {
     const service = authStore.isTrainer ? trainerService : saleService
@@ -914,7 +922,7 @@ async function doReschedule() {
       scheduled_date: action.date,
       scheduled_start_time: action.startTime,
       scheduled_end_time: action.endTime,
-      reschedule_reason: action.reason || null
+      reschedule_reason: action.reason.trim()
     })
     toast.success('Appointment rescheduled.')
     eventStore.closeModals()
