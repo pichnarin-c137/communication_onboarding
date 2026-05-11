@@ -610,7 +610,8 @@
               <button @click="submitAction" type="button"
                 :disabled="actionSubmitting || !proofMedia || !actionForm.latitude || !actionForm.longitude || gettingLocation"
                 class="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-primary-dark disabled:opacity-60">
-                <span v-if="actionSubmitting">{{ isStartAction ? 'Starting…' : 'Completing…' }}</span>
+                <span v-if="uploadingPhoto">Uploading photo…</span>
+                <span v-else-if="actionSubmitting">{{ isStartAction ? 'Starting…' : 'Completing…' }}</span>
                 <span v-else-if="!proofMedia">Take a photo first</span>
                 <span v-else-if="gettingLocation">Getting your location…</span>
                 <span v-else-if="!actionForm.latitude || !actionForm.longitude">Location required</span>
@@ -796,7 +797,9 @@ const canvasEl = ref(null)
 const cameraReady = ref(false)
 const cameraError = ref(false)
 const photoTaken = ref(false)
-const proofMedia = ref(null)
+const proofMedia = ref(null)   // base64 data URI — preview only
+const proofBlob = ref(null)    // raw Blob — used for R2 upload
+const uploadingPhoto = ref(false)
 const gettingLocation = ref(false)
 const locationError = ref(null)
 let mediaStream = null
@@ -860,6 +863,8 @@ function resetActionForm() {
   cameraError.value = false
   photoTaken.value = false
   proofMedia.value = null
+  proofBlob.value = null
+  uploadingPhoto.value = false
   locationError.value = null
 }
 
@@ -899,6 +904,7 @@ function capturePhoto() {
   proofMedia.value = canvas.toDataURL('image/jpeg', 0.85)
   photoTaken.value = true
   stopCamera()
+  canvas.toBlob(blob => { proofBlob.value = blob }, 'image/jpeg', 0.85)
 }
 
 function retakePhoto() {
@@ -910,6 +916,7 @@ function retakePhoto() {
 function onFileChange(event) {
   const file = event.target.files?.[0]
   if (!file) return
+  proofBlob.value = file
   const reader = new FileReader()
   reader.onload = () => {
     proofMedia.value = reader.result
@@ -992,18 +999,23 @@ async function load() {
 async function submitAction() {
   actionSubmitError.value = null
   actionSubmitting.value = true
+  uploadingPhoto.value = true
 
   try {
+    const folder = isStartAction.value ? 'start_proof' : 'end_proof'
+    const mediaId = await trainerService.uploadProofToR2(proofBlob.value, folder)
+    uploadingPhoto.value = false
+
     if (isStartAction.value) {
       await trainerService.startAppointment(appt.value.id, {
-        start_proof_media: proofMedia.value,
+        start_proof_media_id: mediaId,
         start_latitude: actionForm.latitude,
         start_longitude: actionForm.longitude,
       })
       toast.success('Appointment started!')
     } else {
       await trainerService.completeAppointment(appt.value.id, {
-        end_proof_media: proofMedia.value,
+        end_proof_media_id: mediaId,
         end_latitude: actionForm.latitude,
         end_longitude: actionForm.longitude,
         student_count: actionForm.student_count,
@@ -1016,6 +1028,7 @@ async function submitAction() {
     await load()
   } catch (err) {
     actionSubmitError.value = extractErrorMessage(err)
+    uploadingPhoto.value = false
   } finally {
     actionSubmitting.value = false
   }

@@ -1010,6 +1010,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { CheckCircleIcon } from '@heroicons/vue/24/solid'
 import { onboardingService } from '@/modules/shared/services/onboardingService.js'
+import { trainerService } from '@/modules/trainer/services/trainerService.js'
 import { getPlaylists, getVideos, extractYouTubeId, getYouTubeThumbnail } from '@/modules/shared/services/lessonService.js'
 import { businessTypeService } from '@/modules/shared/services/businessTypeService.js'
 import { useOCR } from '@/modules/shared/composables/useOCR.js'
@@ -1343,31 +1344,38 @@ const companyForm = reactive({
   is_completed: false,
 })
 const companyOriginal = ref({})  // snapshot for dirty tracking
-const companyLogoPreview = ref(null)    // data URI (local) or CDN URL — for <img> display
-const companyLogoBase64 = ref(null)     // Base64 data URI to send on save → backend uploads to Cloudinary
+const companyLogoPreview = ref(null)  // local object URL or CDN URL — for <img> display
+const logoMediaId = ref(null)         // R2 media UUID — set after successful upload
+const uploadingLogo = ref(false)
 const savingCompany = ref(false)
 const companyError = ref(null)
 
-// Patent: Base64 for image files only (PDFs are OCR-only, no preview storage)
-const patentDocumentBase64 = ref(null)
+// Patent: UUID for image files only (PDFs are OCR-only, no stored preview)
+const patentMediaId = ref(null)
+const uploadingPatent = ref(false)
 
 const COMPANY_FIELDS = ['company_name', 'company_name_kh', 'business_type', 'owner_name', 'owner_name_kh', 'phone', 'address_kh']
 
 const companyDirty = computed(() => {
-  if (companyLogoBase64.value) return true      // new logo ready to persist
-  if (patentDocumentBase64.value) return true   // new patent image ready to persist
+  if (logoMediaId.value) return true      // new logo uploaded and ready to persist
+  if (patentMediaId.value) return true    // new patent image uploaded and ready to persist
   return COMPANY_FIELDS.some(k => companyForm[k] !== (companyOriginal.value[k] ?? ''))
 })
 
-function handleLogoUpload(e) {
+async function handleLogoUpload(e) {
   const file = e.target.files[0]
   if (!file) return
-  const reader = new FileReader()
-  reader.onload = (event) => {
-    companyLogoBase64.value = event.target.result   // data:image/...;base64,...
-    companyLogoPreview.value = event.target.result   // local preview until CDN URL returned
+  companyLogoPreview.value = URL.createObjectURL(file)
+  uploadingLogo.value = true
+  try {
+    logoMediaId.value = await trainerService.uploadProofToR2(file, 'logos')
+  } catch (err) {
+    toast.error(err.message || 'Logo upload failed.')
+    companyLogoPreview.value = null
+    logoMediaId.value = null
+  } finally {
+    uploadingLogo.value = false
   }
-  reader.readAsDataURL(file)
 }
 
 // Business Types — loaded from API
@@ -1424,16 +1432,21 @@ async function handlePatentUpload(e) {
   patentFileName.value = file.name
   ocrResult.value = null
   showOcrPanel.value = false
-  patentDocumentBase64.value = null
+  patentMediaId.value = null
 
   if (file.type.startsWith('image/')) {
-    // Show local preview and read Base64 for later Cloudinary upload (via backend on save)
     patentPreviewUrl.value = URL.createObjectURL(file)
-    const reader = new FileReader()
-    reader.onload = (event) => { patentDocumentBase64.value = event.target.result }
-    reader.readAsDataURL(file)
+    uploadingPatent.value = true
+    trainerService.uploadProofToR2(file, 'patent')
+      .then(id => { patentMediaId.value = id })
+      .catch(err => {
+        toast.error(err.message || 'Patent upload failed.')
+        patentPreviewUrl.value = null
+        patentMediaId.value = null
+      })
+      .finally(() => { uploadingPatent.value = false })
   } else {
-    // PDF — OCR only; no image preview can be stored
+    // PDF — OCR only; no image upload or preview
     patentPreviewUrl.value = null
   }
 
@@ -1570,14 +1583,13 @@ async function load() {
       companyForm.phone = content.phone || ''
       companyForm.address_kh = content.address_kh || ''
       companyForm.is_completed = ci.is_completed || false
-      // Restore CDN URLs saved by the backend after previous Cloudinary uploads
       if (content.logo_url) {
-        companyLogoPreview.value = content.logo_url  // show saved CDN logo
-        companyLogoBase64.value = null               // no pending upload
+        companyLogoPreview.value = content.logo_url
+        logoMediaId.value = null
       }
       if (content.patent_image_url) {
-        patentPreviewUrl.value = content.patent_image_url  // patent modal certificate
-        patentDocumentBase64.value = null
+        patentPreviewUrl.value = content.patent_image_url
+        patentMediaId.value = null
       }
       // Snapshot for dirty tracking
       Object.assign(companyOriginal.value, Object.fromEntries(COMPANY_FIELDS.map(k => [k, companyForm[k]])))
@@ -1643,7 +1655,7 @@ async function saveCompanyInfo() {
   companyError.value = null
   try {
     // The backend OnboardingCompanyInfo model stores all structured fields as a JSON blob in `content`.
-    // Build the content object, preserving existing logo_base64 if no new logo was uploaded.
+    // Build the content object. logo_media_id / patent_media_id are sent separately if a new file was uploaded.
     let existingContent = {}
     try {
       const savedContent = ob.value?.company_info?.content
@@ -1651,8 +1663,7 @@ async function saveCompanyInfo() {
     } catch { /* ignore */ }
 
     // Structured company fields go into the `content` JSON blob.
-    // logo_url and patent_image_url are NOT set here — the backend merges them
-    // after uploading the Base64 fields to Cloudinary.
+    // logo_url and patent_image_url are set by the backend from the R2 media records.
     const contentData = {
       ...existingContent,
       company_name: companyForm.company_name,
@@ -1668,10 +1679,8 @@ async function saveCompanyInfo() {
       content: JSON.stringify(contentData),
       is_completed: companyForm.is_completed,
     }
-    // Send Base64 data URIs as top-level fields — backend uploads them to Cloudinary
-    // and stores the resulting CDN URLs inside `content` (same pattern as appointment proofs)
-    if (companyLogoBase64.value) payload.logo_base64 = companyLogoBase64.value
-    if (patentDocumentBase64.value) payload.patent_document_base64 = patentDocumentBase64.value
+    if (logoMediaId.value) payload.logo_media_id = logoMediaId.value
+    if (patentMediaId.value) payload.patent_media_id = patentMediaId.value
 
     const res = await onboardingService.updateCompanyInfo(ob.value.id, payload)
 
@@ -1679,8 +1688,8 @@ async function saveCompanyInfo() {
     if (res.data) ob.value.company_info = res.data
 
     // Reset dirty state
-    companyLogoBase64.value = null
-    patentDocumentBase64.value = null
+    logoMediaId.value = null
+    patentMediaId.value = null
     Object.assign(companyOriginal.value, Object.fromEntries(COMPANY_FIELDS.map(k => [k, companyForm[k]])))
     toast.success('Company info saved.')
   } catch (err) {
