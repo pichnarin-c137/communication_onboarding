@@ -166,7 +166,8 @@
         :disabled="submitting || !proofMedia || !form.latitude || !form.longitude || gettingLocation"
         class="w-full py-3 text-sm font-semibold text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-60"
       >
-        <span v-if="submitting">{{ isStartStep ? 'Starting…' : 'Completing…' }}</span>
+        <span v-if="uploadingPhoto">Uploading photo…</span>
+        <span v-else-if="submitting">{{ isStartStep ? 'Starting…' : 'Completing…' }}</span>
         <span v-else-if="!proofMedia">Take a photo first</span>
         <span v-else-if="gettingLocation">Getting your location…</span>
         <span v-else-if="!form.latitude || !form.longitude">Location required</span>
@@ -212,7 +213,9 @@ const canvasEl   = ref(null)
 const cameraReady = ref(false)
 const cameraError = ref(false)
 const photoTaken  = ref(false)
-const proofMedia  = ref(null)
+const proofMedia  = ref(null)  // base64 data URI — preview only
+const proofBlob   = ref(null)  // raw Blob — used for R2 upload
+const uploadingPhoto = ref(false)
 
 let mediaStream = null
 
@@ -243,6 +246,7 @@ function capturePhoto() {
   proofMedia.value = canvas.toDataURL('image/jpeg', 0.85)
   photoTaken.value  = true
   stopCamera()
+  canvas.toBlob(blob => { proofBlob.value = blob }, 'image/jpeg', 0.85)
 }
 
 function retakePhoto() {
@@ -260,8 +264,12 @@ function stopCamera() {
 function onFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
+  proofBlob.value = file
   const reader = new FileReader()
-  reader.onload = () => { proofMedia.value = reader.result }
+  reader.onload = () => {
+    proofMedia.value = reader.result
+    photoTaken.value = true
+  }
   reader.readAsDataURL(file)
 }
 
@@ -297,27 +305,34 @@ const submitError = ref(null)
 async function submit() {
   submitError.value = null
   submitting.value  = true
+  uploadingPhoto.value = true
+
   try {
+    const folder = isStartStep.value ? 'start_proof' : 'end_proof'
+    const mediaId = await trainerService.uploadProofToR2(proofBlob.value, folder)
+    uploadingPhoto.value = false
+
     if (isStartStep.value) {
       await trainerService.startAppointment(appt.value.id, {
-        start_proof_media: proofMedia.value,
-        start_latitude:    form.latitude,
-        start_longitude:   form.longitude,
+        start_proof_media_id: mediaId,
+        start_latitude:       form.latitude,
+        start_longitude:      form.longitude,
       })
       toast.success('Appointment started!')
     } else {
       await trainerService.completeAppointment(appt.value.id, {
-        end_proof_media:   proofMedia.value,
-        end_latitude:      form.latitude,
-        end_longitude:     form.longitude,
-        student_count:     form.student_count,
-        completion_notes:  form.completion_notes || null,
+        end_proof_media_id: mediaId,
+        end_latitude:       form.latitude,
+        end_longitude:      form.longitude,
+        student_count:      form.student_count,
+        completion_notes:   form.completion_notes || null,
       })
       toast.success('Appointment completed!')
     }
     router.push(`/trainer/appointments/${appt.value.id}`)
   } catch (err) {
     submitError.value = extractErrorMessage(err)
+    uploadingPhoto.value = false
   } finally {
     submitting.value = false
   }

@@ -137,7 +137,7 @@
 
               <!--  START sub-panel  -->
               <ActionPanel v-if="mode === 'start'" title="Start Appointment" @back="mode = 'view'">
-                <ProofCapture label="Start proof photo *" v-model:media-id="action.proofMedia" />
+                <ProofCapture label="Start proof photo *" v-model:media-id="action.proofMedia" :folder="'start_proof'" />
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" class="mt-3" />
                 <div v-if="actionError" class="text-sm text-red-600 mt-2">{{ actionError }}</div>
                 <div class="flex gap-2 mt-4">
@@ -152,7 +152,7 @@
 
               <!--  COMPLETE sub-panel  -->
               <ActionPanel v-if="mode === 'complete'" title="Complete Appointment" @back="mode = 'view'">
-                <ProofCapture label="End proof photo *" v-model:media-id="action.proofMedia" />
+                <ProofCapture label="End proof photo *" v-model:media-id="action.proofMedia" :folder="'end_proof'" />
                 <GpsCapture v-model:lat="action.lat" v-model:lng="action.lng" class="mt-3" />
                 <!-- <div class="mt-3">
                   <label class="block text-xs font-medium text-gray-700 mb-1.5">Number of students *</label>
@@ -495,15 +495,17 @@ const GpsCapture = {
   }
 }
 
-// Proof photo capture (camera-first, file fallback)
+// Proof photo capture (camera-first, file fallback) — uploads directly to R2, emits UUID
 const ProofCapture = {
-  props: { label: String, mediaId: String },
+  props: { label: String, mediaId: String, folder: { type: String, default: 'start_proof' } },
   emits: ['update:mediaId'],
   setup(props, { emit }) {
     const cameraReady = ref(false)
     const cameraError = ref(false)
-    const photoTaken = ref(!!props.mediaId)
-    const error = ref(null)
+    const photoTaken = ref(false)
+    const uploading = ref(false)
+    const uploadError = ref(null)
+    const previewSrc = ref(null)
     const videoEl = ref(null)
     const canvasEl = ref(null)
     let mediaStream = null
@@ -515,12 +517,10 @@ const ProofCapture = {
         cameraError.value = true
         return
       }
-
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
         })
-
         if (!videoEl.value) return
         videoEl.value.srcObject = mediaStream
         videoEl.value.onloadedmetadata = () => { cameraReady.value = true }
@@ -534,6 +534,23 @@ const ProofCapture = {
       mediaStream = null
     }
 
+    async function doUpload(blob) {
+      uploading.value = true
+      uploadError.value = null
+      try {
+        const mediaId = await trainerService.uploadProofToR2(blob, props.folder)
+        emit('update:mediaId', mediaId)
+      } catch (ex) {
+        uploadError.value = ex.message || 'Upload failed. Retake and try again.'
+        photoTaken.value = false
+        previewSrc.value = null
+        emit('update:mediaId', null)
+        startCamera()
+      } finally {
+        uploading.value = false
+      }
+    }
+
     function capturePhoto() {
       const video = videoEl.value
       const canvas = canvasEl.value
@@ -541,14 +558,16 @@ const ProofCapture = {
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
       canvas.getContext('2d').drawImage(video, 0, 0)
-      emit('update:mediaId', canvas.toDataURL('image/jpeg', 0.85))
+      previewSrc.value = canvas.toDataURL('image/jpeg', 0.85)
       photoTaken.value = true
-      error.value = null
+      uploadError.value = null
       stopCamera()
+      canvas.toBlob(b => { if (b) doUpload(b) }, 'image/jpeg', 0.85)
     }
 
     function retakePhoto() {
       emit('update:mediaId', null)
+      previewSrc.value = null
       photoTaken.value = false
       startCamera()
     }
@@ -556,33 +575,24 @@ const ProofCapture = {
     async function onChange(e) {
       const file = e.target.files?.[0]
       if (!file) return
-      try {
-        const base64 = await fileToDataUrl(file)
-        emit('update:mediaId', base64)
-        photoTaken.value = true
-        error.value = null
-        stopCamera()
-      } catch (ex) {
-        error.value = ex.message || 'Failed to read selected image'
-      }
+      previewSrc.value = URL.createObjectURL(file)
+      photoTaken.value = true
+      uploadError.value = null
+      await doUpload(file)
     }
 
     onMounted(() => {
       if (props.mediaId) return
-      requestAnimationFrame(() => {
-        startCamera()
-      })
+      requestAnimationFrame(() => { startCamera() })
     })
 
-    onBeforeUnmount(() => {
-      stopCamera()
-    })
+    onBeforeUnmount(() => { stopCamera() })
 
     return () => h('div', { class: 'bg-white rounded-xl border border-gray-200 overflow-hidden' }, [
       h('div', { class: 'px-4 pt-4 pb-2' }, [
         h('div', { class: 'flex items-center justify-between' }, [
           h('label', { class: 'block text-xs font-medium text-gray-700' }, props.label),
-          props.mediaId
+          (props.mediaId && !uploading.value)
             ? h('span', { class: 'inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium' }, [
               h('span', { class: 'w-2 h-2 rounded-full bg-emerald-500' }),
               'Captured'
@@ -602,13 +612,23 @@ const ProofCapture = {
             class: 'block w-full text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary file:text-white hover:file:bg-primary-dark'
           })
         ])
-        : photoTaken.value && props.mediaId
+        : photoTaken.value && previewSrc.value
           ? h('div', { class: 'relative' }, [
-            h('img', { src: props.mediaId, alt: 'Proof photo', class: 'w-full max-h-56 object-cover' }),
-            h('button', {
-              type: 'button', onClick: retakePhoto,
-              class: 'absolute bottom-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 bg-black/60 hover:bg-black/75 text-white text-[11px] rounded-lg transition-colors'
-            }, [h(ArrowPathIcon, { class: 'w-3.5 h-3.5' }), 'Retake'])
+            h('img', { src: previewSrc.value, alt: 'Proof photo', class: 'w-full max-h-56 object-cover' }),
+            uploading.value
+              ? h('div', { class: 'absolute inset-0 flex items-center justify-center bg-black/40' }, [
+                h('div', { class: 'flex items-center gap-2 text-white text-xs font-medium' }, [
+                  h('svg', { class: 'w-4 h-4 animate-spin', fill: 'none', viewBox: '0 0 24 24' }, [
+                    h('circle', { class: 'opacity-25', cx: '12', cy: '12', r: '10', stroke: 'currentColor', 'stroke-width': '4' }),
+                    h('path', { class: 'opacity-75', fill: 'currentColor', d: 'M4 12a8 8 0 018-8v8z' })
+                  ]),
+                  'Uploading…'
+                ])
+              ])
+              : h('button', {
+                type: 'button', onClick: retakePhoto,
+                class: 'absolute bottom-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 bg-black/60 hover:bg-black/75 text-white text-[11px] rounded-lg transition-colors'
+              }, [h(ArrowPathIcon, { class: 'w-3.5 h-3.5' }), 'Retake'])
           ])
           : h('div', { class: 'relative bg-black' }, [
             h('video', {
@@ -630,18 +650,9 @@ const ProofCapture = {
             h('canvas', { ref: canvasEl, class: 'hidden' })
           ]),
 
-      error.value ? h('p', { class: 'px-4 pb-3 text-xs text-red-600' }, error.value) : null
+      uploadError.value ? h('p', { class: 'px-4 pb-3 text-xs text-red-600' }, uploadError.value) : null
     ])
   }
-}
-
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = () => reject(new Error('Failed to read selected image'))
-    reader.readAsDataURL(file)
-  })
 }
 
 // Main component
@@ -862,7 +873,7 @@ async function doStart() {
   actionLoading.value = true; actionError.value = null
   try {
     await trainerService.startAppointment(appt.value.id, {
-      start_proof_media: action.proofMedia,
+      start_proof_media_id: action.proofMedia,
       start_latitude: action.lat || 0,
       start_longitude: action.lng || 0
     })
@@ -877,7 +888,7 @@ async function doComplete() {
   actionLoading.value = true; actionError.value = null
   try {
     await trainerService.completeAppointment(appt.value.id, {
-      end_proof_media: action.proofMedia,
+      end_proof_media_id: action.proofMedia,
       end_latitude: action.lat || 0,
       end_longitude: action.lng || 0,
       student_count: action.studentCount,
