@@ -43,6 +43,41 @@
       </main>
     </template>
 
+    <!-- Admin Layout -->
+    <template v-else-if="currentLayout === 'admin'">
+      <NavBar
+        :user="authStore.user"
+        role="sales"
+        :sidebar-collapsed="sidebarCollapsed"
+        :nav-items="[]"
+        @toggle-sidebar="sidebarOpen = !sidebarOpen"
+      />
+
+      <Sidebar
+        :open="sidebarOpen"
+        :nav-groups="adminNavGroups"
+        :is-mobile="isMobile"
+        :collapsed="sidebarCollapsed"
+        home-route="/admin/users"
+        @close="sidebarOpen = false"
+        @toggle-collapse="toggleCollapse"
+      />
+      <main
+        :class="[
+          'transition-all duration-300 pt-16 pb-6 px-4 sm:px-6 lg:px-6',
+          sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+        ]"
+      >
+        <div class="w-full">
+          <router-view v-slot="{ Component }">
+            <Transition name="fade" mode="out-in">
+              <component v-if="Component" :is="Component" :key="route.fullPath" />
+            </Transition>
+          </router-view>
+        </div>
+      </main>
+    </template>
+
     <!-- Trainer Layout -->
     <template v-else-if="currentLayout === 'trainer'">
       <NavBar
@@ -96,7 +131,9 @@ import {
   AcademicCapIcon,
   Cog6ToothIcon,
   ChartBarIcon,
-  FilmIcon
+  FilmIcon,
+  UsersIcon,
+  ClipboardDocumentCheckIcon,
 } from '@heroicons/vue/24/outline'
 import {
   Circle
@@ -142,21 +179,62 @@ function toggleCollapse() {
   localStorage.setItem('sidebar_collapsed', sidebarCollapsed.value)
 }
 
-const salesNavGroups = computed(() => [
+const salesNavGroups = computed(() => {
+  const groups = [
+    {
+      label: 'Main',
+      items: [
+        { to: '/sales', label: t('nav.dashboard'), icon: HomeIcon },
+        { to: '/sales/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
+        { to: '/sales/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
+        { to: '/sales/calendar', label: t('nav.calendar'), icon: CalendarDaysIcon },
+        {
+          label: t('nav.configurations'),
+          icon: Cog6ToothIcon,
+          children: [
+            { to: '/sales/configurations/telegram-bot', label: t('nav.telegramBot'), icon: Circle },
+            { to: '/sales/configurations/business-types', label: t('nav.businessTypes'), icon: Circle },
+          ],
+        },
+      ],
+    },
+    {
+      label: 'Account',
+      items: [
+        { to: '/sales/profile', label: t('nav.profile'), icon: UserIcon },
+        { to: '/sales/settings', label: t('nav.settings'), icon: Cog6ToothIcon },
+      ],
+    },
+  ]
+
+  if (authStore.user?.role === 'admin') {
+    groups.unshift({
+      label: 'Admin',
+      items: [
+        { to: '/admin/users', label: 'User Management', icon: UsersIcon },
+        { to: '/admin/activity-logs', label: 'Activity Logs', icon: ClipboardDocumentCheckIcon },
+      ],
+    })
+  }
+
+  return groups
+})
+
+const adminNavGroups = computed(() => [
   {
-    label: 'Main',
+    label: 'Admin',
+    items: [
+      { to: '/admin/users', label: 'User Management', icon: UsersIcon },
+      { to: '/admin/activity-logs', label: 'Activity Logs', icon: ClipboardDocumentCheckIcon },
+    ],
+  },
+  {
+    label: 'Operations',
     items: [
       { to: '/sales', label: t('nav.dashboard'), icon: HomeIcon },
       { to: '/sales/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
       { to: '/sales/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
       { to: '/sales/calendar', label: t('nav.calendar'), icon: CalendarDaysIcon },
-      // {
-      //   label: t('nav.reports'),
-      //   icon: ChartBarIcon,
-      //   children: [  
-      //     { to: '/sales/report/appointments', label: t('nav.appointmentReport'), icon: Circle },
-      //   ],
-      // },
       {
         label: t('nav.configurations'),
         icon: Cog6ToothIcon,

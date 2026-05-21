@@ -218,7 +218,7 @@ const userDisplayName = computed(() => {
 
 function isActive(path) {
   if (route.path === path) return true
-  const exactOnly = ['/sales', '/trainer', '/sales/onboardings/create', '/trainer/schedule']
+  const exactOnly = ['/sales', '/trainer', '/admin/users', '/sales/onboardings/create', '/trainer/schedule']
   if (exactOnly.includes(path)) return false
   return route.path.startsWith(path + '/')
 }
