@@ -17,6 +17,10 @@ export function setupRouteGuards(router) {
     const userRole = authStore.user?.role
     // Admin can access all protected routes
     if (userRole === 'admin') return next()
+    // Non-admin trying to access admin-only routes
+    if (requiredRole === 'admin') {
+      return next(userRole === 'trainer' ? '/trainer' : '/sales')
+    }
     if (requiredRole === 'sale' && userRole === 'trainer') return next('/trainer')
     if (requiredRole === 'trainer' && userRole === 'sale') return next('/sales')
 

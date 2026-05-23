@@ -41,7 +41,7 @@
         <p class="text-xs text-gray-400 mt-0.5 mb-4">Send a link to the client so they can rate their experience</p>
         <div class="flex flex-col items-center gap-2 w-full max-w-xs">
           <AppButton variant="primary" size="sm" class="w-full" :loading="requesting" @click="handleRequest">
-            Request via Email
+            Request Feedback
           </AppButton>
           <button class="text-xs text-primary hover:underline transition-colors" @click="showManualForm = !showManualForm">
             {{ showManualForm ? 'Cancel manual entry' : 'Enter manually instead' }}

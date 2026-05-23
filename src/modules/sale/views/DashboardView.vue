@@ -124,6 +124,9 @@
       </div>
     </div>
 
+    <!-- My Trainers widget -->
+    <MyTrainersDashboardWidget v-if="!loading && uiPrefs.saleWidgets.myTrainers" />
+
     <!-- Two-column section: Upcoming + Onboarding Progress -->
     <div
         v-if="uiPrefs.saleWidgets.upcoming || uiPrefs.saleWidgets.onboarding"
@@ -237,6 +240,7 @@ import { useDateTime } from '@/modules/shared/composables/useDateTime.js'
 import SummaryCard from '@/modules/sale/components/SummaryCard.vue'
 import StatusBadge from '@/modules/shared/components/StatusBadge.vue'
 import SkeletonLoader from '@/modules/shared/components/SkeletonLoader.vue'
+import MyTrainersDashboardWidget from '@/modules/sale/components/MyTrainersDashboardWidget.vue'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement)
 
@@ -255,6 +259,7 @@ const saleWidgetList = computed(() => [
   { key: 'upcoming', label: t('dashboard.sale.widgets.upcoming') },
   { key: 'onboarding', label: t('dashboard.sale.widgets.onboarding') },
   { key: 'charts', label: t('dashboard.sale.widgets.charts') },
+  { key: 'myTrainers', label: 'My Trainers' },
 ])
 
 function handleClickOutside(e) {

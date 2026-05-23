@@ -21,7 +21,7 @@ export default [
     path: '/trainer/appointments/:id',
     name: 'TrainerAppointmentDetail',
     component: () => import('@/modules/trainer/views/AppointmentDetailView.vue'),
-    meta: { layout: 'trainer', title: 'Appointment Detail', role: 'trainer' }
+    meta: { layout: 'trainer', title: 'Appointment Detail', role: 'trainer' } 
   },
   {
     path: '/trainer/appointments/:id/complete',
@@ -52,6 +52,12 @@ export default [
     name: 'TrainerLessons',
     component: () => import('@/modules/trainer/views/LessonsView.vue'),
     meta: { layout: 'trainer', title: 'Lessons Playlist', role: 'trainer' }
+  },
+  {
+    path: '/trainer/analytics',
+    name: 'TrainerAnalytics',
+    component: () => import('@/modules/trainer/views/AnalyticsView.vue'),
+    meta: { layout: 'trainer', title: 'My Scorecard', role: 'trainer' }
   },
   {
     path: '/trainer/calendar',

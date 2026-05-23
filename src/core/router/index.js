@@ -3,15 +3,19 @@ import { setupRouteGuards } from '@/core/router/guards.js'
 import authRoutes from '@/modules/auth/routes.js'
 import saleRoutes from '@/modules/sale/routes.js'
 import trainerRoutes from '@/modules/trainer/routes.js'
+import adminRoutes from '@/modules/admin/routes.js'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    name: 'Landing',
+    component: () => import('@/modules/shared/views/LandingView.vue'),
+    meta: { layout: 'none' }
   },
   ...authRoutes,
   ...saleRoutes,
-  ...trainerRoutes
+  ...trainerRoutes,
+  ...adminRoutes
 ]
 
 const router = createRouter({

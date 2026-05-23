@@ -167,12 +167,14 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeftIcon } from '@heroicons/vue/24/outline'
 import { useSaleStore } from '@/modules/sale/store/sale.js'
 import { useEventStore } from '@/modules/shared/store/events.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
+import { extractErrorMessage, getErrorCode } from '@core/services/error.handler'
 
+const route = useRoute()
 const router = useRouter()
 const saleStore = useSaleStore()
 const eventStore = useEventStore()
@@ -221,7 +223,13 @@ async function submit() {
     toast.success('Appointment created successfully!')
     router.push(`/sales/appointments/${response.data?.id || response.id || ''}`)
   } catch (err) {
-    error.value = err.response?.data?.message || 'Failed to create appointment.'
+    if (getErrorCode(err) === 'TRAINER_NOT_IN_SALE_ROSTER') {
+      form.trainer_id = ''
+      error.value = 'This trainer is not in your assigned roster. Leave the field blank or contact an admin to update your roster.'
+      toast.error('Trainer is not in your roster.')
+    } else {
+      error.value = extractErrorMessage(err)
+    }
   } finally {
     submitting.value = false
   }
@@ -232,5 +240,9 @@ onMounted(async () => {
     saleStore.fetchClients(),
     saleStore.fetchTrainers()
   ])
+  const preselect = route.query.trainer_id
+  if (preselect && saleStore.trainers.some((t) => t.id === preselect)) {
+    form.trainer_id = preselect
+  }
 })
 </script>

@@ -70,8 +70,10 @@ async function handleVerify() {
     const role = authStore.user?.role
     if (role === 'trainer') {
       router.push('/trainer')
-    } else if (role === 'sale' || role === 'admin') {
+    } else if (role === 'sale') {
       router.push('/sales')
+    } else if (role === 'admin') {
+      router.push('/admin/users')
     } else {
       authStore.error = `Account role "${role}" is not supported in this application.`
       authStore.user = null;
