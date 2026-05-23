@@ -21,7 +21,7 @@ export default [
     path: '/trainer/appointments/:id',
     name: 'TrainerAppointmentDetail',
     component: () => import('@/modules/trainer/views/AppointmentDetailView.vue'),
-    meta: { layout: 'trainer', title: 'Appointment Detail', role: 'trainer' }
+    meta: { layout: 'trainer', title: 'Appointment Detail', role: 'trainer' } 
   },
   {
     path: '/trainer/appointments/:id/complete',

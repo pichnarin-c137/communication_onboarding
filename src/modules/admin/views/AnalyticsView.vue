@@ -48,15 +48,23 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useAnalyticsStore } from '@/modules/shared/store/analytics.js'
+import { useAnalyticsUrlSync } from '@/modules/shared/composables/useAnalyticsUrlSync.js'
 import FilterBar from '@/modules/shared/components/analytics/FilterBar.vue'
 import OverviewTab from '@/modules/shared/components/analytics/tabs/OverviewTab.vue'
+import TrainersTab from '@/modules/shared/components/analytics/tabs/TrainersTab.vue'
+import SalesTab from '@/modules/shared/components/analytics/tabs/SalesTab.vue'
+import FunnelTab from '@/modules/shared/components/analytics/tabs/FunnelTab.vue'
 import SatisfactionTab from '@/modules/shared/components/analytics/tabs/SatisfactionTab.vue'
 
 const store = useAnalyticsStore()
+useAnalyticsUrlSync()
 const activeTab = ref('overview')
 
 const tabs = [
   { key: 'overview', label: 'Overview', component: OverviewTab },
+  { key: 'trainers', label: 'Trainers', component: TrainersTab },
+  { key: 'sales', label: 'Sales', component: SalesTab },
+  { key: 'onboarding', label: 'Onboarding', component: FunnelTab },
   { key: 'satisfaction', label: 'Satisfaction', component: SatisfactionTab },
 ]
 
