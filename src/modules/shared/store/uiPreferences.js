@@ -22,6 +22,7 @@ export const useUiPreferences = defineStore('uiPreferences', () => {
     upcoming: true,
     onboarding: true,
     charts: true,
+    myTrainers: true,
   }))
 
   const trainerWidgets = reactive(loadWidgets('coms_trainer_widgets', {
@@ -47,7 +48,7 @@ export const useUiPreferences = defineStore('uiPreferences', () => {
   }
 
   function resetSaleWidgets() {
-    Object.assign(saleWidgets, { stats: true, upcoming: true, onboarding: true, charts: true })
+    Object.assign(saleWidgets, { stats: true, upcoming: true, onboarding: true, charts: true, myTrainers: true })
     localStorage.removeItem('coms_sale_widgets')
   }
 

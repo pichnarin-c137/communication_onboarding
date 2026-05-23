@@ -17,4 +17,10 @@ export default [
     component: () => import('@/modules/admin/views/ActivityLogView.vue'),
     meta: { layout: 'admin', title: 'Activity Logs', role: 'admin' }
   },
+  {
+    path: '/admin/analytics',
+    name: 'AdminAnalytics',
+    component: () => import('@/modules/admin/views/AnalyticsView.vue'),
+    meta: { layout: 'admin', title: 'Analytics', role: 'admin' }
+  },
 ]

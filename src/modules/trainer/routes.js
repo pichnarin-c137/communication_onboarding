@@ -54,6 +54,12 @@ export default [
     meta: { layout: 'trainer', title: 'Lessons Playlist', role: 'trainer' }
   },
   {
+    path: '/trainer/analytics',
+    name: 'TrainerAnalytics',
+    component: () => import('@/modules/trainer/views/AnalyticsView.vue'),
+    meta: { layout: 'trainer', title: 'My Scorecard', role: 'trainer' }
+  },
+  {
     path: '/trainer/calendar',
     name: 'TrainerCalendar',
     component: () => import('@/modules/trainer/views/CalendarView.vue'),

@@ -88,7 +88,7 @@
       <div class="border-b border-gray-200">
         <nav class="flex gap-6">
           <button
-            v-for="tab in tabs"
+            v-for="tab in visibleTabs"
             :key="tab.key"
             @click="activeTab = tab.key"
             :class="[
@@ -109,6 +109,16 @@
             <dd class="text-sm text-gray-900">{{ field.value || '—' }}</dd>
           </div>
         </dl>
+      </div>
+
+      <!-- Dedicated Trainers tab (sale only) -->
+      <div v-if="activeTab === 'roster'" class="bg-white border border-gray-200 rounded-xl p-6">
+        <RosterTab
+          :trainers="rosterStore.roster"
+          :loading="rosterStore.loading"
+          :readonly="isDeleted"
+          @edit="showEditRoster = true"
+        />
       </div>
 
       <!-- Activity Logs tab -->
@@ -166,6 +176,21 @@
     @confirm="onDeleteConfirm"
     @cancel="showDelete = false"
   />
+
+  <EditRosterModal
+    :open="showEditRoster"
+    :current-trainers="rosterStore.roster"
+    ref="editRosterRef"
+    @close="showEditRoster = false"
+    @submit="onRosterSubmit"
+  />
+
+  <BlockedActionModal
+    :open="showBlockedAction"
+    :action="blockedAction"
+    :context="blockedContext"
+    @close="showBlockedAction = false"
+  />
   </div>
 </template>
 
@@ -175,40 +200,55 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { useUserAdminStore } from '@/modules/admin/store/user-admin.store.js'
 import { useActivityLogStore } from '@/modules/admin/store/activity-log.store.js'
+import { useRosterStore } from '@/modules/admin/store/roster.store.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
-import { extractErrorMessage } from '@core/services/error.handler'
+import { extractErrorMessage, getErrorCode, getErrorContext } from '@core/services/error.handler'
 import UserStatusBadge from '@/modules/admin/components/UserStatusBadge.vue'
 import EditUserInfoModal from '@/modules/admin/components/EditUserInfoModal.vue'
 import EditCredentialsModal from '@/modules/admin/components/EditCredentialsModal.vue'
 import DeleteUserModal from '@/modules/admin/components/DeleteUserModal.vue'
 import ActivityLogTable from '@/modules/admin/components/ActivityLogTable.vue'
+import RosterTab from '@/modules/admin/components/RosterTab.vue'
+import EditRosterModal from '@/modules/admin/components/EditRosterModal.vue'
+import BlockedActionModal from '@/modules/admin/components/BlockedActionModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useUserAdminStore()
 const logStore = useActivityLogStore()
+const rosterStore = useRosterStore()
 const toast = useToast()
 
 const activeTab = ref('profile')
 const tabs = [
   { key: 'profile', label: 'Profile' },
+  { key: 'roster', label: 'Dedicated Trainers', saleOnly: true },
   { key: 'logs', label: 'Activity Logs' },
 ]
 
 const showEditInfo = ref(false)
 const showEditCreds = ref(false)
 const showDelete = ref(false)
+const showEditRoster = ref(false)
+const showBlockedAction = ref(false)
+const blockedAction = ref('suspend')
+const blockedContext = ref({})
 const deleteHard = ref(false)
 const deleteLoading = ref(false)
 
 const editInfoRef = ref(null)
 const editCredsRef = ref(null)
+const editRosterRef = ref(null)
 
 const isDeleted = computed(() => !!store.currentUser?.is_deleted || !!store.currentUser?.deleted_at)
+const isSaleUser = computed(() => store.currentUser?.role === 'sale')
+
+const visibleTabs = computed(() => tabs.filter((t) => !t.saleOnly || isSaleUser.value))
 
 onMounted(async () => {
   try {
     await store.fetchUser(route.params.id)
+    if (isSaleUser.value) loadRoster()
   } catch (err) {
     toast.error(extractErrorMessage(err))
   }
@@ -216,7 +256,46 @@ onMounted(async () => {
 
 watch(activeTab, (tab) => {
   if (tab === 'logs') loadLogs(1)
+  if (tab === 'roster' && rosterStore.roster.length === 0 && !rosterStore.loading) loadRoster()
 })
+
+watch(isSaleUser, (sale) => {
+  if (sale) loadRoster()
+  else rosterStore.reset()
+})
+
+async function loadRoster() {
+  try {
+    await rosterStore.fetch(route.params.id)
+  } catch (err) {
+    toast.error(extractErrorMessage(err))
+  }
+}
+
+async function onRosterSubmit(trainerIds) {
+  editRosterRef.value?.setLoading(true)
+  try {
+    const data = await rosterStore.save(route.params.id, trainerIds)
+    showEditRoster.value = false
+    const added = data?.added?.length || 0
+    const removed = data?.removed?.length || 0
+    if (added || removed) {
+      toast.success(`Roster updated — added ${added}, removed ${removed}.`)
+    } else {
+      toast.success('Roster updated.')
+    }
+  } catch (err) {
+    const code = getErrorCode(err)
+    if (code === 'TRAINER_WORKLOAD_EXCEEDED') {
+      const ctx = getErrorContext(err)
+      editRosterRef.value?.setWorkloadError(ctx)
+    } else {
+      editRosterRef.value?.setError(extractErrorMessage(err))
+    }
+  } finally {
+    editRosterRef.value?.setLoading(false)
+  }
+}
 
 async function loadLogs(page = 1) {
   try {
@@ -232,6 +311,12 @@ async function onSuspendToggle() {
     const action = store.currentUser?.is_suspended ? 'suspended' : 'unsuspended'
     toast.success(`User ${action} successfully.`)
   } catch (err) {
+    if (getErrorCode(err) === 'TRAINER_HAS_ACTIVE_COMMITMENTS') {
+      blockedAction.value = 'suspend'
+      blockedContext.value = getErrorContext(err) || {}
+      showBlockedAction.value = true
+      return
+    }
     toast.error(extractErrorMessage(err))
   }
 }
@@ -295,6 +380,13 @@ async function onDeleteConfirm() {
     }
     showDelete.value = false
   } catch (err) {
+    if (getErrorCode(err) === 'TRAINER_HAS_ACTIVE_COMMITMENTS') {
+      showDelete.value = false
+      blockedAction.value = 'delete'
+      blockedContext.value = getErrorContext(err) || {}
+      showBlockedAction.value = true
+      return
+    }
     toast.error(extractErrorMessage(err))
   } finally {
     deleteLoading.value = false

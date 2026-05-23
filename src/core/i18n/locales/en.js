@@ -10,6 +10,8 @@ export default {
     telegramBot: 'Telegram Bot',
     businessTypes: 'Business Type',
     appointmentReport: 'Appointments',
+    analytics: 'Analytics',
+    scorecard: 'My Scorecard',
     profile: 'Profile',
     settings: 'Settings',
   },

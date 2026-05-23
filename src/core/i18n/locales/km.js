@@ -10,6 +10,8 @@ export default {
     telegramBot: 'តេលេក្រាមបត់',
     businessTypes: 'ប្រភេទអាជីវកម្ម',
     appointmentReport: 'ការណាត់ជួប',
+    analytics: 'វិភាគទិន្នន័យ',
+    scorecard: 'លទ្ធផលរបស់ខ្ញុំ',
     profile: 'ប្រវត្តិរូប',
     settings: 'ការកំណត់',
   },

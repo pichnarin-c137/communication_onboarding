@@ -55,7 +55,7 @@
 
       <Sidebar
         :open="sidebarOpen"
-        :nav-groups="adminNavGroups"
+        :nav-groups="salesNavGroups"
         :is-mobile="isMobile"
         :collapsed="sidebarCollapsed"
         home-route="/admin/users"
@@ -133,6 +133,7 @@ import {
   ChartBarIcon,
   FilmIcon,
   UsersIcon,
+  UserGroupIcon,
   ClipboardDocumentCheckIcon,
 } from '@heroicons/vue/24/outline'
 import {
@@ -180,13 +181,18 @@ function toggleCollapse() {
 }
 
 const salesNavGroups = computed(() => {
+  const isAdmin = authStore.user?.role === 'admin'
   const groups = [
     {
       label: 'Main',
       items: [
         { to: '/sales', label: t('nav.dashboard'), icon: HomeIcon },
+        // Admins get the full-visibility /admin/analytics in the Admin group below,
+        // so the sales-scoped link is only shown to actual sale users.
+        ...(isAdmin ? [] : [{ to: '/sales/analytics', label: 'Analytics', icon: ChartBarIcon }]),
         { to: '/sales/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
         { to: '/sales/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
+        { to: '/sales/trainers', label: 'My Trainers', icon: UserGroupIcon },
         { to: '/sales/calendar', label: t('nav.calendar'), icon: CalendarDaysIcon },
         {
           label: t('nav.configurations'),
@@ -207,11 +213,12 @@ const salesNavGroups = computed(() => {
     },
   ]
 
-  if (authStore.user?.role === 'admin') {
+  if (isAdmin) {
     groups.unshift({
       label: 'Admin',
       items: [
         { to: '/admin/users', label: 'User Management', icon: UsersIcon },
+        { to: '/admin/analytics', label: 'Analytics', icon: ChartBarIcon },
         { to: '/admin/activity-logs', label: 'Activity Logs', icon: ClipboardDocumentCheckIcon },
       ],
     })
@@ -220,45 +227,12 @@ const salesNavGroups = computed(() => {
   return groups
 })
 
-const adminNavGroups = computed(() => [
-  {
-    label: 'Admin',
-    items: [
-      { to: '/admin/users', label: 'User Management', icon: UsersIcon },
-      { to: '/admin/activity-logs', label: 'Activity Logs', icon: ClipboardDocumentCheckIcon },
-    ],
-  },
-  {
-    label: 'Operations',
-    items: [
-      { to: '/sales', label: t('nav.dashboard'), icon: HomeIcon },
-      { to: '/sales/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
-      { to: '/sales/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
-      { to: '/sales/calendar', label: t('nav.calendar'), icon: CalendarDaysIcon },
-      {
-        label: t('nav.configurations'),
-        icon: Cog6ToothIcon,
-        children: [
-          { to: '/sales/configurations/telegram-bot', label: t('nav.telegramBot'), icon: Circle },
-          { to: '/sales/configurations/business-types', label: t('nav.businessTypes'), icon: Circle },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      { to: '/sales/profile', label: t('nav.profile'), icon: UserIcon },
-      { to: '/sales/settings', label: t('nav.settings'), icon: Cog6ToothIcon },
-    ],
-  },
-])
-
 const trainerNavGroups = computed(() => [
   {
     label: 'Main',
     items: [
       { to: '/trainer', label: t('nav.dashboard'), icon: HomeIcon },
+      { to: '/trainer/analytics', label: 'My Scorecard', icon: ChartBarIcon },
       { to: '/trainer/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
       { to: '/trainer/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
       { to: '/trainer/lessons', label: t('nav.lessons'), icon: FilmIcon },

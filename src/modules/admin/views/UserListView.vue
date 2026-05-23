@@ -86,6 +86,13 @@
     @confirm="onDeleteConfirm"
     @cancel="showDelete = false"
   />
+
+  <BlockedActionModal
+    :open="showBlockedAction"
+    :action="blockedAction"
+    :context="blockedContext"
+    @close="showBlockedAction = false"
+  />
   </div>
 </template>
 
@@ -95,13 +102,14 @@ import { useRouter } from 'vue-router'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { useUserAdminStore } from '@/modules/admin/store/user-admin.store.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
-import { extractErrorMessage } from '@core/services/error.handler'
+import { extractErrorMessage, getErrorCode, getErrorContext } from '@core/services/error.handler'
 import UserFilters from '@/modules/admin/components/UserFilters.vue'
 import UserTable from '@/modules/admin/components/UserTable.vue'
 import CreateUserModal from '@/modules/admin/components/CreateUserModal.vue'
 import EditUserInfoModal from '@/modules/admin/components/EditUserInfoModal.vue'
 import EditCredentialsModal from '@/modules/admin/components/EditCredentialsModal.vue'
 import DeleteUserModal from '@/modules/admin/components/DeleteUserModal.vue'
+import BlockedActionModal from '@/modules/admin/components/BlockedActionModal.vue'
 
 const router = useRouter()
 const store = useUserAdminStore()
@@ -111,6 +119,9 @@ const showCreate = ref(false)
 const showEditInfo = ref(false)
 const showEditCreds = ref(false)
 const showDelete = ref(false)
+const showBlockedAction = ref(false)
+const blockedAction = ref('suspend')
+const blockedContext = ref({})
 const deleteHard = ref(false)
 const deleteLoading = ref(false)
 const selectedUser = ref(null)
@@ -180,6 +191,12 @@ async function onSuspend(user) {
     const action = user.is_suspended ? 'unsuspended' : 'suspended'
     toast.success(`User ${action} successfully.`)
   } catch (err) {
+    if (getErrorCode(err) === 'TRAINER_HAS_ACTIVE_COMMITMENTS') {
+      blockedAction.value = 'suspend'
+      blockedContext.value = getErrorContext(err) || {}
+      showBlockedAction.value = true
+      return
+    }
     toast.error(extractErrorMessage(err))
   }
 }
@@ -196,10 +213,31 @@ async function onForceReset(user) {
 async function onCreateSubmit(data) {
   createModalRef.value?.setLoading(true)
   try {
-    await store.createUser(data)
+    const response = await store.createUser(data)
     showCreate.value = false
     toast.success('User created successfully.')
+    // If roster step succeeded, response.data.dedicated_trainers is populated;
+    // if it failed mid-flight, the server still returns 2xx for the user row
+    // but with dedicated_trainers === null and a follow-up error_code. We
+    // can't reach that here without it throwing, so just trust the toast.
+    return response
   } catch (err) {
+    const code = getErrorCode(err)
+    // Roster-related codes mean: user row likely committed, roster failed.
+    // Send admin to the user detail page so they can retry via PUT.
+    const rosterCodes = [
+      'TRAINER_WORKLOAD_EXCEEDED',
+      'SUSPENDED_OR_DELETED_TRAINER_CANNOT_BE_ASSIGNED',
+      'INVALID_USER_ROLE_FOR_ROSTER',
+    ]
+    if (code && rosterCodes.includes(code)) {
+      const newUserId = err?.response?.data?.data?.user_id
+      showCreate.value = false
+      toast.warning('User created, but the roster could not be set. Finish setup on the user detail page.')
+      if (newUserId) router.push(`/admin/users/${newUserId}`)
+      else await store.fetchUsers(1)
+      return
+    }
     createModalRef.value?.setError(extractErrorMessage(err))
   } finally {
     createModalRef.value?.setLoading(false)
@@ -244,6 +282,13 @@ async function onDeleteConfirm() {
     }
     showDelete.value = false
   } catch (err) {
+    if (getErrorCode(err) === 'TRAINER_HAS_ACTIVE_COMMITMENTS') {
+      showDelete.value = false
+      blockedAction.value = 'delete'
+      blockedContext.value = getErrorContext(err) || {}
+      showBlockedAction.value = true
+      return
+    }
     toast.error(extractErrorMessage(err))
   } finally {
     deleteLoading.value = false

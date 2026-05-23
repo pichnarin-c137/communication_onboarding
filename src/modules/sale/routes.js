@@ -8,13 +8,13 @@ export default [
   {
     path: '/sales/trainers',
     name: 'SalesTrainerList',
-    component: () => import('@/modules/sale/views/TrainerListView.vue'),
-    meta: { layout: 'sales', title: 'Trainer Activity', role: 'sale' }
+    component: () => import('@/modules/sale/views/MyTrainersListView.vue'),
+    meta: { layout: 'sales', title: 'My Trainers', role: 'sale' }
   },
   {
     path: '/sales/trainers/:id',
     name: 'SalesTrainerDetail',
-    component: () => import('@/modules/sale/views/TrainerDetailView.vue'),
+    component: () => import('@/modules/sale/views/MyTrainerDetailView.vue'),
     meta: { layout: 'sales', title: 'Trainer Detail', role: 'sale' }
   },
   {
@@ -82,6 +82,12 @@ export default [
     name: 'AppointmentReport',
     component: () => import('@/modules/sale/views/AppointmentReportView.vue'),
     meta: { layout: 'sales', title: 'Appointment Reports', role: 'sale' }
+  },
+  {
+    path: '/sales/analytics',
+    name: 'SalesAnalytics',
+    component: () => import('@/modules/sale/views/AnalyticsView.vue'),
+    meta: { layout: 'sales', title: 'Analytics', role: 'sale' }
   },
   {
     path: '/sales/profile',

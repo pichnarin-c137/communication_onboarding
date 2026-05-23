@@ -55,6 +55,22 @@
               </select>
             </div>
 
+            <!-- Dedicated Trainers (sale only) -->
+            <div v-if="form.role === 'sale'" class="space-y-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Dedicated Trainers <span class="text-red-500">*</span>
+              </label>
+              <p class="text-xs text-gray-500 leading-relaxed mb-1.5">
+                Pick the trainers this sale is allowed to assign to appointments. At least {{ MIN_TRAINERS }} required.
+              </p>
+              <DedicatedTrainerPicker
+                v-model="form.trainer_ids"
+                :min="MIN_TRAINERS"
+                :invalid="rosterInvalid"
+                :hint="rosterInvalid ? `Select at least ${MIN_TRAINERS} trainer${MIN_TRAINERS > 1 ? 's' : ''}.` : ''"
+              />
+            </div>
+
             <!-- Profile section -->
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-2">Profile (optional)</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -121,8 +137,11 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
+import DedicatedTrainerPicker from '@/modules/shared/components/DedicatedTrainerPicker.vue'
+
+const MIN_TRAINERS = 1
 
 const props = defineProps({
   open: { type: Boolean, default: false }
@@ -132,25 +151,49 @@ const emit = defineEmits(['close', 'submit'])
 
 const loading = ref(false)
 const error = ref('')
+const rosterTouched = ref(false)
 
 const emptyForm = () => ({
   email: '', username: '', phone_number: '', password: '',
   role: '', first_name: '', last_name: '', gender: '',
-  dob: '', nationality: '', address: ''
+  dob: '', nationality: '', address: '', trainer_ids: []
 })
 
 const form = ref(emptyForm())
 
+const rosterInvalid = computed(() =>
+  form.value.role === 'sale'
+    && rosterTouched.value
+    && (form.value.trainer_ids?.length || 0) < MIN_TRAINERS
+)
+
 watch(() => props.open, (val) => {
-  if (val) { form.value = emptyForm(); error.value = '' }
+  if (val) { form.value = emptyForm(); error.value = ''; rosterTouched.value = false }
+})
+
+watch(() => form.value.role, (role) => {
+  if (role !== 'sale') form.value.trainer_ids = []
 })
 
 async function handleSubmit() {
+  if (form.value.role === 'sale') {
+    rosterTouched.value = true
+    if ((form.value.trainer_ids?.length || 0) < MIN_TRAINERS) {
+      error.value = `Select at least ${MIN_TRAINERS} dedicated trainer.`
+      return
+    }
+  }
+
   loading.value = true
   error.value = ''
   try {
     const data = { ...form.value }
-    Object.keys(data).forEach(k => { if (data[k] === '') delete data[k] })
+    // Drop trainer_ids for non-sale roles, drop other empty fields.
+    if (data.role !== 'sale') delete data.trainer_ids
+    Object.keys(data).forEach(k => {
+      if (k === 'trainer_ids') return
+      if (data[k] === '') delete data[k]
+    })
     emit('submit', data)
   } finally {
     loading.value = false
