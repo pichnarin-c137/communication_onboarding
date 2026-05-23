@@ -53,6 +53,7 @@
 
       <TrendLineChart
         v-else
+        exportable
         :title="activeMetricLabel"
         :subtitle="metricSubtitle"
         :series="trends.data?.series || []"

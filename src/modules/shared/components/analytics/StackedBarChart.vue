@@ -5,19 +5,30 @@
         <h3 class="text-sm font-semibold text-gray-900">{{ title }}</h3>
         <p v-if="subtitle" class="text-xs text-gray-500 mt-0.5">{{ subtitle }}</p>
       </div>
+      <button
+        v-if="exportable && labels.length"
+        type="button"
+        @click="exportPng"
+        title="Download PNG"
+        class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <ArrowDownTrayIcon class="w-3.5 h-3.5" />
+      </button>
     </div>
     <div v-if="!labels.length" class="h-56 flex items-center justify-center text-xs text-gray-400">
       No data in this range
     </div>
     <div v-else class="relative" style="height: 240px">
-      <Bar :data="chartData" :options="chartOptions" />
+      <Bar ref="chartRef" :data="chartData" :options="chartOptions" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Bar } from 'vue-chartjs'
+import { ArrowDownTrayIcon } from '@heroicons/vue/20/solid'
+import { downloadChartPng } from '@/modules/shared/composables/useChartPng.js'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -34,9 +45,16 @@ const props = defineProps({
   subtitle: { type: String, default: '' },
   buckets: { type: Array, default: () => [] }, // [{ bucket, [key]: count, ... }]
   stacks: { type: Array, required: true }, // [{ key, label, color }]
+  exportable: { type: Boolean, default: false },
 })
 
 const labels = computed(() => props.buckets.map((b) => b.bucket))
+
+const chartRef = ref(null)
+function exportPng() {
+  const slug = props.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  downloadChartPng(chartRef, `${slug || 'chart'}.png`)
+}
 
 const chartData = computed(() => ({
   labels: labels.value,

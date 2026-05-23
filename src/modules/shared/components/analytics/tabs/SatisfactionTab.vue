@@ -1,5 +1,17 @@
 <template>
   <div class="space-y-5">
+    <!-- Low-rating banner -->
+    <div
+      v-if="alerts.length"
+      class="flex items-center gap-3 px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl"
+    >
+      <ExclamationTriangleIcon class="w-5 h-5 text-rose-500 flex-shrink-0" />
+      <p class="text-sm text-rose-700 flex-1">
+        <span class="font-semibold">{{ alerts.length }}</span>
+        low-rating {{ alerts.length === 1 ? 'review' : 'reviews' }} (≤ 2 stars) in the last 7 days need attention.
+      </p>
+    </div>
+
     <!-- Summary KPIs -->
     <section>
       <header class="flex items-center justify-between mb-3">
@@ -61,6 +73,7 @@
       />
 
       <TrendLineChart
+        exportable
         title="Average rating trend"
         subtitle="Weekly average of submitted ratings"
         :series="trendSeries"
@@ -96,6 +109,7 @@
 
 <script setup>
 import { computed, onMounted, watch } from 'vue'
+import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import { useAnalyticsStore } from '@/modules/shared/store/analytics.js'
 import KpiCard from '@/modules/shared/components/analytics/KpiCard.vue'
 import KpiCardGrid from '@/modules/shared/components/analytics/KpiCardGrid.vue'

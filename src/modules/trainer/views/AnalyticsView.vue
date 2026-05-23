@@ -93,12 +93,14 @@
       <!-- Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <StackedBarChart
+          exportable
           title="My appointment outcomes"
           subtitle="By week — done, cancelled, rescheduled, no-show"
           :buckets="data.appointment_outcomes_by_week || []"
           :stacks="outcomeStacks"
         />
         <TrendLineChart
+          exportable
           title="My rating trend"
           subtitle="Average client rating per week"
           :series="ratingSeries"
