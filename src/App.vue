@@ -135,6 +135,7 @@ import {
   UsersIcon,
   UserGroupIcon,
   ClipboardDocumentCheckIcon,
+  BriefcaseIcon,
 } from '@heroicons/vue/24/outline'
 import {
   Circle
@@ -182,14 +183,38 @@ function toggleCollapse() {
 
 const salesNavGroups = computed(() => {
   const isAdmin = authStore.user?.role === 'admin'
-  const groups = [
+
+  // Admins get a slim, admin-scoped menu — not the full sales sidebar.
+  // This computed is bound to both the 'sales' and 'admin' layouts, so an admin
+  // sees the same focused menu whether they're on /admin/* or /crm (sales layout).
+  if (isAdmin) {
+    return [
+      {
+        label: 'Admin',
+        items: [
+          { to: '/admin/users', label: 'User Management', icon: UsersIcon },
+          { to: '/crm', label: 'CRM', icon: BriefcaseIcon },
+          { to: '/admin/analytics', label: 'Analytics', icon: ChartBarIcon },
+          { to: '/admin/activity-logs', label: 'Activity Logs', icon: ClipboardDocumentCheckIcon },
+        ],
+      },
+      {
+        label: 'Account',
+        items: [
+          { to: '/sales/profile', label: t('nav.profile'), icon: UserIcon },
+          { to: '/sales/settings', label: t('nav.settings'), icon: Cog6ToothIcon },
+        ],
+      },
+    ]
+  }
+
+  return [
     {
       label: 'Main',
       items: [
         { to: '/sales', label: t('nav.dashboard'), icon: HomeIcon },
-        // Admins get the full-visibility /admin/analytics in the Admin group below,
-        // so the sales-scoped link is only shown to actual sale users.
-        ...(isAdmin ? [] : [{ to: '/sales/analytics', label: 'Analytics', icon: ChartBarIcon }]),
+        { to: '/crm', label: 'CRM', icon: BriefcaseIcon },
+        { to: '/sales/analytics', label: 'Analytics', icon: ChartBarIcon },
         { to: '/sales/appointments', label: t('nav.appointments'), icon: ClipboardDocumentListIcon },
         { to: '/sales/onboarding', label: t('nav.onboarding'), icon: AcademicCapIcon },
         { to: '/sales/trainers', label: 'My Trainers', icon: UserGroupIcon },
@@ -212,19 +237,6 @@ const salesNavGroups = computed(() => {
       ],
     },
   ]
-
-  if (isAdmin) {
-    groups.unshift({
-      label: 'Admin',
-      items: [
-        { to: '/admin/users', label: 'User Management', icon: UsersIcon },
-        { to: '/admin/analytics', label: 'Analytics', icon: ChartBarIcon },
-        { to: '/admin/activity-logs', label: 'Activity Logs', icon: ClipboardDocumentCheckIcon },
-      ],
-    })
-  }
-
-  return groups
 })
 
 const trainerNavGroups = computed(() => [

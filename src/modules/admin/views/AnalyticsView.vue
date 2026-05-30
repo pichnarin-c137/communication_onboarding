@@ -56,6 +56,7 @@ import SalesTab from '@/modules/shared/components/analytics/tabs/SalesTab.vue'
 import FunnelTab from '@/modules/shared/components/analytics/tabs/FunnelTab.vue'
 import SatisfactionTab from '@/modules/shared/components/analytics/tabs/SatisfactionTab.vue'
 import OperationsTab from '@/modules/shared/components/analytics/tabs/OperationsTab.vue'
+import InsightsTab from '@/modules/shared/components/analytics/tabs/InsightsTab.vue'
 
 const store = useAnalyticsStore()
 useAnalyticsUrlSync()
@@ -68,6 +69,7 @@ const tabs = [
   { key: 'onboarding', label: 'Onboarding', component: FunnelTab },
   { key: 'satisfaction', label: 'Satisfaction', component: SatisfactionTab },
   { key: 'operations', label: 'Operations', component: OperationsTab },
+  { key: 'insights', label: 'Insights', component: InsightsTab },
 ]
 
 const activeTabComponent = computed(

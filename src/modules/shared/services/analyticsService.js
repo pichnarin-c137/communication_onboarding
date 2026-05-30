@@ -49,6 +49,19 @@ export const analyticsService = {
   onboardingsBreakdown(params, signal) {
     return get('/analytics/onboardings/breakdown', params, signal)
   },
+  // Phase 4 — Intelligence
+  sentiment(params, signal) {
+    return get('/analytics/sentiment', params, signal)
+  },
+  anomalies(params, signal) {
+    return get('/analytics/anomalies', params, signal)
+  },
+  cohorts(params, signal) {
+    return get('/analytics/cohorts', params, signal)
+  },
+  forecast(params, signal) {
+    return get('/analytics/forecast', params, signal)
+  },
 }
 
 export default analyticsService

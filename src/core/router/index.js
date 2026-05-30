@@ -4,6 +4,7 @@ import authRoutes from '@/modules/auth/routes.js'
 import saleRoutes from '@/modules/sale/routes.js'
 import trainerRoutes from '@/modules/trainer/routes.js'
 import adminRoutes from '@/modules/admin/routes.js'
+import crmRoutes from '@/modules/crm/routes.js'
 
 const routes = [
   {
@@ -15,7 +16,8 @@ const routes = [
   ...authRoutes,
   ...saleRoutes,
   ...trainerRoutes,
-  ...adminRoutes
+  ...adminRoutes,
+  ...crmRoutes
 ]
 
 const router = createRouter({

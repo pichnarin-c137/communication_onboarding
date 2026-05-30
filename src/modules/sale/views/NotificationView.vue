@@ -181,6 +181,7 @@ const notificationTypeMap = {
   stage_completed:              { icon: FlagIcon,         bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' },
   training_completed:           { icon: TrophyIcon,       bgClass: 'bg-yellow-100',  iconClass: 'text-yellow-600' },
   onboarding_completed:         { icon: StarIcon,         bgClass: 'bg-yellow-100',  iconClass: 'text-yellow-600' },
+  crm_demo_completed:           { icon: CalendarDaysIcon, bgClass: 'bg-violet-100',  iconClass: 'text-violet-600' },
 }
 
 function notificationMeta(type) {
