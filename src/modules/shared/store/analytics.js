@@ -37,6 +37,10 @@ const SLOTS = [
   'heatmap',
   'engagement',
   'onboardingsBreakdown',
+  'sentiment',
+  'anomalies',
+  'cohorts',
+  'forecast',
 ]
 
 function emptySlot() {
@@ -178,6 +182,34 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     )
   }
 
+  function fetchSentiment() {
+    return fetchSlot('sentiment', (signal) =>
+      analyticsService.sentiment(filters.value, signal),
+    )
+  }
+
+  function fetchAnomalies() {
+    return fetchSlot('anomalies', (signal) =>
+      analyticsService.anomalies(filters.value, signal),
+    )
+  }
+
+  function fetchCohorts(extra = {}) {
+    return fetchSlot(
+      'cohorts',
+      (signal) => analyticsService.cohorts({ ...filters.value, ...extra }, signal),
+      JSON.stringify(extra),
+    )
+  }
+
+  function fetchForecast(extra = {}) {
+    return fetchSlot(
+      'forecast',
+      (signal) => analyticsService.forecast({ ...filters.value, ...extra }, signal),
+      JSON.stringify(extra),
+    )
+  }
+
   return {
     filters,
     slots,
@@ -196,5 +228,9 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     fetchHeatmap,
     fetchEngagement,
     fetchOnboardingsBreakdown,
+    fetchSentiment,
+    fetchAnomalies,
+    fetchCohorts,
+    fetchForecast,
   }
 })

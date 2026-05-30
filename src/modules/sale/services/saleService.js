@@ -14,9 +14,12 @@ export const saleService = {
   },
 
   /**
-   * @param {Object} data - { title, appointment_type, location_type, client_id, system_id,
+   * @param {Object} data - { title, appointment_type, location_type,
    *   trainer_id?, scheduled_date, scheduled_start_time, scheduled_end_time,
    *   meeting_link?, physical_location?, notes? }
+   *   Plus exactly one client reference: either `client_id` (existing client) OR,
+   *   for a demo booked against a CRM prospect, `crm_contact_id` (+ optional `crm_deal_id`).
+   *   A demo must carry exactly one of the two; training must carry `client_id` only.
    */
   async createAppointment(data) {
     const response = await api.post('/appointments', data)

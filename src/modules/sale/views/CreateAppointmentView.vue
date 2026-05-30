@@ -32,18 +32,20 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Type *</label>
-            <select v-model="form.appointment_type" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
-              <option value="training">Training</option>
-              <option value="demo">Demo</option>
-            </select>
+            <AppSelect
+              v-model="form.appointment_type"
+              :options="TYPE_OPTIONS"
+              :disabled="isProspectDemo"
+              placeholder="Select type…"
+            />
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Location Type *</label>
-            <select v-model="form.location_type" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
-              <option value="physical">Physical</option>
-              <option value="online">Online</option>
-              <option value="hybrid">Hybrid</option>
-            </select>
+            <AppSelect
+              v-model="form.location_type"
+              :options="LOCATION_OPTIONS"
+              placeholder="Select location…"
+            />
           </div>
         </div>
       </div>
@@ -52,22 +54,47 @@
       <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h2 class="text-sm font-semibold text-gray-900">Assignment</h2>
 
-        <div>
+        <!-- CRM prospect (demo booked from the pipeline) -->
+        <div v-if="isProspectDemo">
+          <label class="block text-xs font-medium text-gray-700 mb-1.5">Prospect</label>
+          <div class="flex items-center gap-2 px-3 py-2.5 border border-gray-200 bg-gray-50 rounded-lg">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 text-violet-700">
+              CRM Prospect
+            </span>
+            <span class="text-sm font-medium text-gray-800">{{ crmContactName || 'Prospect' }}</span>
+          </div>
+          <p class="mt-1 text-xs text-gray-500">This demo is booked against a CRM prospect — it converts to a client when the deal is won.</p>
+        </div>
+
+        <!-- Existing client -->
+        <div v-else>
           <label class="block text-xs font-medium text-gray-700 mb-1.5">Client *</label>
-          <select v-model="form.client_id" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
-            <option value="">Select client...</option>
-            <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.company_name }}</option>
-          </select>
+          <AppSelect
+            v-model="form.client_id"
+            :options="clientOptions"
+            :loading="saleStore.loadingClients"
+            remote
+            clearable
+            placeholder="Select client…"
+            search-placeholder="Search clients…"
+            empty-text="No clients found"
+            @search="onClientSearch"
+          />
         </div>
 
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1.5">Trainer (optional)</label>
-          <select v-model="form.trainer_id" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
-            <option value="">Assign later...</option>
-            <option v-for="t in trainers" :key="t.id" :value="t.id">
-              {{ t.first_name }} {{ t.last_name }}
-            </option>
-          </select>
+          <AppSelect
+            v-model="form.trainer_id"
+            :options="trainerOptions"
+            :loading="saleStore.loadingTrainers"
+            remote
+            clearable
+            placeholder="Assign later…"
+            search-placeholder="Search trainers…"
+            empty-text="No trainers found"
+            @search="onTrainerSearch"
+          />
         </div>
       </div>
 
@@ -169,6 +196,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeftIcon } from '@heroicons/vue/24/outline'
+import AppSelect from '@/modules/shared/components/AppSelect.vue'
 import { useSaleStore } from '@/modules/sale/store/sale.js'
 import { useEventStore } from '@/modules/shared/store/events.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
@@ -182,6 +210,13 @@ const toast = useToast()
 
 const submitting = ref(false)
 const error = ref(null)
+
+// CRM prospect-demo context (passed from the pipeline's "Schedule Demo" action).
+// When present, the appointment is booked against a CRM contact instead of a client.
+const crmContactId = route.query.crm_contact_id || ''
+const crmDealId = route.query.crm_deal_id || ''
+const crmContactName = route.query.crm_contact_name || ''
+const isProspectDemo = computed(() => !!crmContactId)
 
 const form = reactive({
   title: '',
@@ -200,17 +235,51 @@ const form = reactive({
 const clients = computed(() => saleStore.clients)
 const trainers = computed(() => saleStore.trainers)
 
+const TYPE_OPTIONS = [
+  { value: 'training', label: 'Training' },
+  { value: 'demo', label: 'Demo' }
+]
+const LOCATION_OPTIONS = [
+  { value: 'physical', label: 'Physical' },
+  { value: 'online', label: 'Online' },
+  { value: 'hybrid', label: 'Hybrid' }
+]
+const clientOptions = computed(() =>
+  clients.value.map((c) => ({ value: c.id, label: c.company_name + (c.from_crm ? ' • CRM' : '') }))
+)
+const trainerOptions = computed(() =>
+  trainers.value.map((t) => ({ value: t.id, label: `${t.first_name} ${t.last_name}`.trim() }))
+)
+
+function onClientSearch(q) {
+  saleStore.fetchClients(q)
+}
+function onTrainerSearch(q) {
+  saleStore.fetchTrainers(q)
+}
+
 async function submit() {
+  if (!isProspectDemo.value && !form.client_id) {
+    error.value = 'Please select a client.'
+    return
+  }
   submitting.value = true
   error.value = null
   try {
     const payload = {
       appointment_type: form.appointment_type,
       location_type: form.location_type,
-      client_id: form.client_id,
       scheduled_date: form.scheduled_date,
       scheduled_start_time: form.scheduled_start_time,
       scheduled_end_time: form.scheduled_end_time
+    }
+    // A demo must carry exactly one of crm_contact_id or client_id; training only ever
+    // carries client_id (CRM fields on training are rejected by the API).
+    if (isProspectDemo.value) {
+      payload.crm_contact_id = crmContactId
+      if (crmDealId) payload.crm_deal_id = crmDealId
+    } else {
+      payload.client_id = form.client_id
     }
     if (form.title || form.appointment_type === 'demo') payload.title = form.title
     if (form.trainer_id) payload.trainer_id = form.trainer_id
@@ -236,6 +305,9 @@ async function submit() {
 }
 
 onMounted(async () => {
+  // A prospect demo locks the type to "demo" and books against the CRM contact.
+  if (isProspectDemo.value) form.appointment_type = 'demo'
+
   await Promise.all([
     saleStore.fetchClients(),
     saleStore.fetchTrainers()
@@ -243,6 +315,10 @@ onMounted(async () => {
   const preselect = route.query.trainer_id
   if (preselect && saleStore.trainers.some((t) => t.id === preselect)) {
     form.trainer_id = preselect
+  }
+  const preClient = route.query.client_id
+  if (!isProspectDemo.value && preClient && saleStore.clients.some((c) => c.id === preClient)) {
+    form.client_id = preClient
   }
 })
 </script>
