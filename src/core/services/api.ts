@@ -5,8 +5,18 @@ let _accessToken: string | null = null
 let _isRefreshing = false
 let _refreshQueue: Array<(token: string) => void> = []
 
+// While an admin is impersonating a user, the access token lives only in memory
+// and its refresh token is NOT in a cookie (the cookie still belongs to the admin).
+// Auto-refreshing on 401 would silently swap the admin's token back in and retry
+// the impersonated request as the admin — so we suppress refresh while impersonating.
+let _impersonating = false
+
 export function setAccessToken(token: string | null): void {
   _accessToken = token
+}
+
+export function setImpersonating(value: boolean): void {
+  _impersonating = value
 }
 
 const api = axios.create({
@@ -37,6 +47,13 @@ api.interceptors.response.use(
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
     if (error.response?.status !== 401 || original._retry) {
+      return Promise.reject(error)
+    }
+
+    // During impersonation, never refresh via the admin's cookie. Signal the auth
+    // store to exit impersonation (it will restore the admin session) and reject.
+    if (_impersonating) {
+      window.dispatchEvent(new Event('impersonation-expired'))
       return Promise.reject(error)
     }
 

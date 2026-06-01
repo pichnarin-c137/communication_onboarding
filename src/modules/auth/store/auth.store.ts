@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import AuthService from '../services/auth.service'
-import { setAccessToken } from '@core/services/api'
+import { setAccessToken, setImpersonating } from '@core/services/api'
 import type { UserProfile, LoginCredentials } from '../types'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const accessToken = ref<string | null>(null)
   const bootstrapped = ref(false)
+  const impersonating = ref(false)
 
   const isSales = computed(() => user.value?.role === 'sale')
   const isTrainer = computed(() => user.value?.role === 'trainer')
@@ -136,6 +137,38 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Admin force-login: swap the in-memory session to the target user.
+   * The admin's own session lives in the httpOnly refresh cookie and is left
+   * untouched — stopImpersonation() restores it via bootstrapSession().
+   */
+  function startImpersonation(tokenBundle: {
+    access_token: string
+    user: UserProfile
+  }): void {
+    accessToken.value = tokenBundle.access_token
+    setAccessToken(tokenBundle.access_token)
+    user.value = tokenBundle.user
+    impersonating.value = true
+    setImpersonating(true)
+    // Prevent route guards from re-bootstrapping the admin session over the top.
+    bootstrapped.value = true
+  }
+
+  /**
+   * Exit impersonation and restore the admin from the refresh cookie.
+   */
+  async function stopImpersonation(): Promise<void> {
+    if (!impersonating.value) return
+    impersonating.value = false
+    setImpersonating(false)
+    user.value = null
+    accessToken.value = null
+    setAccessToken(null)
+    bootstrapped.value = false
+    await bootstrapSession()
+  }
+
   function clearError(): void {
     error.value = null
   }
@@ -148,6 +181,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     accessToken,
     bootstrapped,
+    impersonating,
     isSales,
     isTrainer,
     isAuthenticated,
@@ -157,6 +191,8 @@ export const useAuthStore = defineStore('auth', () => {
     bootstrapSession,
     logout,
     fetchProfile,
+    startImpersonation,
+    stopImpersonation,
     clearError,
   }
 })

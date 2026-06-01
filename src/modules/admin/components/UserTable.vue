@@ -57,45 +57,95 @@
             <!-- Created -->
             <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{{ formatDate(user.created_at) }}</td>
 
-            <!-- Actions menu -->
-            <td class="px-4 py-3" @click.stop>
-              <div class="relative" v-click-outside="() => closeMenu(user.id)">
-                <button
-                  @click="toggleMenu(user.id)"
-                  class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <EllipsisVerticalIcon class="w-4 h-4" />
-                </button>
-
-                <div
-                  v-if="openMenu === user.id"
-                  class="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1"
-                >
-                  <button @click="action('view', user)" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">View Detail</button>
-                  <button v-if="!isDeleted(user)" @click="action('editInfo', user)" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Edit Info</button>
-                  <button v-if="!isDeleted(user)" @click="action('editCredentials', user)" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">Edit Credentials</button>
-                  <div v-if="!isDeleted(user)" class="my-1 border-t border-gray-100"></div>
-                  <button v-if="!isDeleted(user)" @click="action('suspend', user)" :class="user.is_suspended ? 'w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-50 transition-colors' : 'w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-gray-50 transition-colors'">
-                    {{ user.is_suspended ? 'Unsuspend' : 'Suspend' }}
-                  </button>
-                  <button v-if="!isDeleted(user)" @click="action('forceReset', user)" class="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-50 transition-colors">Force Password Reset</button>
-                  <div class="my-1 border-t border-gray-100"></div>
-                  <button v-if="isDeleted(user)" @click="action('restore', user)" class="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-gray-50 transition-colors">Restore</button>
-                  <button v-if="!isDeleted(user)" @click="action('softDelete', user)" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 transition-colors">Delete</button>
-                  <button v-if="isDeleted(user)" @click="action('hardDelete', user)" class="w-full text-left px-4 py-2 text-sm font-medium text-red-700 hover:bg-gray-50 transition-colors">Permanently Delete</button>
-                </div>
-              </div>
+            <!-- Actions — single ⋮ trigger; menu is teleported (see below) -->
+            <td class="px-4 py-3 text-right" @click.stop>
+              <button
+                @click="toggleMenu(user, $event)"
+                :class="[
+                  'p-1.5 rounded-lg transition-colors',
+                  activeUser?.id === user.id
+                    ? 'bg-gray-100 text-gray-700'
+                    : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                ]"
+              >
+                <EllipsisVerticalIcon class="w-4 h-4" />
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Actions menu — teleported to body so it floats above the table and is
+         never clipped by the card's overflow. Flips up/down based on space. -->
+    <Teleport to="body">
+      <template v-if="activeUser">
+        <div class="fixed inset-0 z-[60]" @click="closeMenu"></div>
+        <div
+          class="fixed z-[61] w-52 bg-white border border-gray-200 rounded-xl shadow-lg ring-1 ring-black/5 py-1.5"
+          :style="menuStyle"
+        >
+          <button @click="action('view', activeUser)" :class="menuItem">
+            <EyeIcon class="w-4 h-4 text-gray-400" /> View detail
+          </button>
+          <button v-if="canImpersonate(activeUser)" @click="action('forceLogin', activeUser)" :class="menuItem">
+            <ArrowRightOnRectangleIcon class="w-4 h-4 text-gray-400" /> Force login
+          </button>
+
+          <template v-if="!isDeleted(activeUser)">
+            <button @click="action('editInfo', activeUser)" :class="menuItem">
+              <PencilSquareIcon class="w-4 h-4 text-gray-400" /> Edit info
+            </button>
+            <button @click="action('editCredentials', activeUser)" :class="menuItem">
+              <KeyIcon class="w-4 h-4 text-gray-400" /> Edit credentials
+            </button>
+
+            <div class="my-1.5 border-t border-gray-100"></div>
+
+            <button @click="action('suspend', activeUser)" :class="[menuItem, activeUser.is_suspended ? 'text-green-600' : 'text-orange-600']">
+              <component :is="activeUser.is_suspended ? PlayCircleIcon : PauseCircleIcon" class="w-4 h-4" />
+              {{ activeUser.is_suspended ? 'Unsuspend' : 'Suspend' }}
+            </button>
+            <button @click="action('forceReset', activeUser)" :class="[menuItem, 'text-blue-600']">
+              <ArrowPathIcon class="w-4 h-4" /> Reset password
+            </button>
+
+            <div class="my-1.5 border-t border-gray-100"></div>
+
+            <button @click="action('softDelete', activeUser)" :class="[menuItem, 'text-red-600']">
+              <TrashIcon class="w-4 h-4" /> Delete
+            </button>
+          </template>
+
+          <template v-else>
+            <button @click="action('restore', activeUser)" :class="[menuItem, 'text-green-600']">
+              <ArrowUturnLeftIcon class="w-4 h-4" /> Restore
+            </button>
+            <button @click="action('hardDelete', activeUser)" :class="[menuItem, 'text-red-700 font-medium']">
+              <FireIcon class="w-4 h-4" /> Permanently delete
+            </button>
+          </template>
+        </div>
+      </template>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { EllipsisVerticalIcon } from '@heroicons/vue/24/outline'
+import { ref, onMounted, onUnmounted } from 'vue'
+import {
+  EllipsisVerticalIcon,
+  EyeIcon,
+  PencilSquareIcon,
+  KeyIcon,
+  PauseCircleIcon,
+  PlayCircleIcon,
+  ArrowPathIcon,
+  TrashIcon,
+  ArrowUturnLeftIcon,
+  ArrowRightOnRectangleIcon,
+  FireIcon,
+} from '@heroicons/vue/24/outline'
 import UserStatusBadge from './UserStatusBadge.vue'
 
 defineProps({
@@ -103,19 +153,55 @@ defineProps({
   loading: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['view', 'editInfo', 'editCredentials', 'suspend', 'forceReset', 'softDelete', 'hardDelete', 'restore'])
+const emit = defineEmits(['view', 'editInfo', 'editCredentials', 'suspend', 'forceReset', 'forceLogin', 'softDelete', 'hardDelete', 'restore'])
 
-const openMenu = ref(null)
+// Shared menu-item styling
+const menuItem = 'w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
 
-function toggleMenu(id) { openMenu.value = openMenu.value === id ? null : id }
-function closeMenu(id) { if (openMenu.value === id) openMenu.value = null }
+const activeUser = ref(null)
+const menuStyle = ref({})
+
+const MENU_WIDTH = 208 // matches w-52
+const MENU_HEIGHT = 360
+
+function toggleMenu(user, event) {
+  if (activeUser.value?.id === user.id) {
+    activeUser.value = null
+    return
+  }
+  const rect = event.currentTarget.getBoundingClientRect()
+  const left = `${Math.max(8, rect.right - MENU_WIDTH)}px`
+  const openUp = window.innerHeight - rect.bottom < MENU_HEIGHT
+  menuStyle.value = openUp
+    ? { left, bottom: `${window.innerHeight - rect.top + 6}px` }
+    : { left, top: `${rect.bottom + 6}px` }
+  activeUser.value = user
+}
+
+function closeMenu() { activeUser.value = null }
 
 function action(type, user) {
-  openMenu.value = null
+  activeUser.value = null
   emit(type, user)
 }
 
+onMounted(() => {
+  window.addEventListener('scroll', closeMenu, true)
+  window.addEventListener('resize', closeMenu)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', closeMenu, true)
+  window.removeEventListener('resize', closeMenu)
+})
+
 function isDeleted(user) { return !!user.is_deleted || !!user.deleted_at }
+
+// Force-login is only allowed for active sale/trainer accounts (the API rejects
+// admin/user targets and suspended/deleted users).
+function canImpersonate(user) {
+  return (user.role === 'sale' || user.role === 'trainer') && !user.is_suspended && !isDeleted(user)
+}
 
 function initials(user) {
   const f = user.first_name?.[0] || ''
@@ -138,19 +224,6 @@ function roleBadgeClass(role) {
 function formatDate(dateStr) {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-// Simple click-outside directive
-const vClickOutside = {
-  mounted(el, binding) {
-    el._clickOutsideHandler = (event) => {
-      if (!el.contains(event.target)) binding.value(event)
-    }
-    document.addEventListener('click', el._clickOutsideHandler)
-  },
-  unmounted(el) {
-    document.removeEventListener('click', el._clickOutsideHandler)
-  }
 }
 </script>
 

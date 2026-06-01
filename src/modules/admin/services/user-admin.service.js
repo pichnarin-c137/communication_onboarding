@@ -36,6 +36,12 @@ export const userAdminService = {
     return response.data
   },
 
+  async forceLogin(id) {
+    // Returns the same token bundle as a normal login, in the body (no cookie).
+    const response = await api.post(`/users/${id}/force-login`)
+    return response.data
+  },
+
   async softDelete(id) {
     const response = await api.delete(`/soft-delete-user/${id}`)
     return response.data

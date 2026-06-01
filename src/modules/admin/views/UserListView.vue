@@ -28,6 +28,7 @@
       @editCredentials="openEditCredentials"
       @suspend="onSuspend"
       @forceReset="onForceReset"
+      @forceLogin="onForceLogin"
       @softDelete="onSoftDelete"
       @hardDelete="onHardDelete"
       @restore="onRestore"
@@ -101,6 +102,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { PlusIcon } from '@heroicons/vue/24/outline'
 import { useUserAdminStore } from '@/modules/admin/store/user-admin.store.js'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { userAdminService } from '@/modules/admin/services/user-admin.service.js'
 import { useToast } from '@/modules/shared/composables/useToast.js'
 import { extractErrorMessage, getErrorCode, getErrorContext } from '@core/services/error.handler'
 import UserFilters from '@/modules/admin/components/UserFilters.vue'
@@ -113,6 +116,7 @@ import BlockedActionModal from '@/modules/admin/components/BlockedActionModal.vu
 
 const router = useRouter()
 const store = useUserAdminStore()
+const authStore = useAuthStore()
 const toast = useToast()
 
 const showCreate = ref(false)
@@ -205,6 +209,17 @@ async function onForceReset(user) {
   try {
     await store.forcePasswordReset(user.id)
     toast.success('Password reset email sent.')
+  } catch (err) {
+    toast.error(extractErrorMessage(err))
+  }
+}
+
+async function onForceLogin(user) {
+  try {
+    const res = await userAdminService.forceLogin(user.id)
+    authStore.startImpersonation(res.data)
+    toast.success(`Viewing as ${displayName(user)} (${res.data.user.role}).`)
+    router.push(res.data.user.role === 'trainer' ? '/trainer' : '/sales')
   } catch (err) {
     toast.error(extractErrorMessage(err))
   }

@@ -15,6 +15,7 @@ export const useNotificationStore = defineStore('notifications', () => {
   const { info } = useToast()
 
   let activeChannel = null
+  let activeUserId = null
 
   async function fetchNotifications(limit = 20) {
     loading.value = true
@@ -66,12 +67,30 @@ export const useNotificationStore = defineStore('notifications', () => {
   }
 
   function connectRealtime() {
-    if (activeChannel) return
     const authStore = useAuthStore()
-    if (!authStore.userId) return
+    const userId = authStore.userId
+    if (!userId) return
+    // Already subscribed to the right user's channel — nothing to do.
+    if (activeChannel && activeUserId === userId) return
 
     const pusher = connect(() => authStore.accessToken)
-    activeChannel = pusher.subscribe(`private-notifications.${authStore.userId}`)
+
+    // The identity changed (e.g. admin force-login / exit impersonation): the
+    // socket is alive, so drop the previous user's channel before subscribing
+    // to the new one. Without this we stay on private-notifications.{adminId}
+    // and never receive the impersonated user's notifications.
+    if (activeChannel) {
+      activeChannel.unbind('NotificationCreated')
+      pusher.unsubscribe(`private-notifications.${activeUserId}`)
+      activeChannel = null
+      // Clear the previous identity's in-memory list so it isn't shown as the
+      // new user's; consumers refetch via fetchNotifications().
+      notifications.value = []
+      unreadCount.value = 0
+    }
+
+    activeChannel = pusher.subscribe(`private-notifications.${userId}`)
+    activeUserId = userId
 
     activeChannel.bind('NotificationCreated', (data) => {
       notifications.value.unshift(data)
@@ -83,14 +102,14 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   function disconnectRealtime() {
     if (activeChannel) {
-      try {
-        activeChannel.unbind('NotificationCreated')
-        activeChannel.unsubscribe()
-      } catch {
-        // WebSocket may already be closing — safe to ignore
-      }
+      // Only unbind locally — do NOT call unsubscribe() here. unsubscribe()
+      // writes a `pusher:unsubscribe` frame to the socket, and disconnect()
+      // below closes the socket anyway. Sending that frame mid-teardown is what
+      // logs "WebSocket is already in CLOSING or CLOSED state".
+      activeChannel.unbind('NotificationCreated')
       activeChannel = null
     }
+    activeUserId = null
     disconnect()
   }
 

@@ -24,7 +24,14 @@ export function usePusher() {
             body: JSON.stringify({ socket_id: socketId, channel_name: channelName }),
           })
             .then((res) => res.json())
-            .then((data) => callback(null, data))
+            .then((data) => {
+              // The auth fetch is async: if the socket was torn down (logout,
+              // token refresh, impersonation switch) while it was in flight,
+              // firing the callback makes pusher-js send a subscribe frame on a
+              // dead socket → "WebSocket is already in CLOSING or CLOSED state".
+              if (!pusherInstance || pusherInstance.connection.state !== 'connected') return
+              callback(null, data)
+            })
             .catch((err) => callback(err, null))
         },
       },

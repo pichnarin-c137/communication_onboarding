@@ -114,6 +114,28 @@
       <MobileNav :tabs="trainerBottomTabs" />
     </template>
 
+    <!-- Impersonation pill — floats above content, no layout shift.
+         Raised on mobile to clear the trainer bottom nav. -->
+    <div
+      v-if="authStore.impersonating"
+      class="fixed right-4 bottom-20 lg:bottom-4 z-[70] flex items-center gap-2.5 rounded-full bg-gray-900 text-white pl-3.5 pr-2 py-1.5 shadow-lg ring-1 ring-black/5"
+    >
+      <span class="relative flex h-2 w-2 flex-shrink-0">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+        <span class="relative inline-flex h-2 w-2 rounded-full bg-amber-400"></span>
+      </span>
+      <span class="text-sm whitespace-nowrap">
+        Viewing as <span class="font-semibold">{{ impersonatedName }}</span>
+        <span class="capitalize text-gray-400">· {{ authStore.user?.role }}</span>
+      </span>
+      <button
+        @click="exitImpersonation"
+        class="inline-flex items-center rounded-full bg-white/15 hover:bg-white/25 px-3 py-1 text-xs font-semibold transition-colors"
+      >
+        Exit
+      </button>
+    </div>
+
     <!-- Toast Container -->
     <ToastContainer />
   </div>
@@ -121,7 +143,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   HomeIcon,
@@ -148,18 +170,45 @@ import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { useNotificationStore } from '@/modules/shared/store/notifications'
 import { useTrainerTracking } from '@/modules/shared/composables/useTrainerTracking'
 import { useUiPreferences } from '@/modules/shared/store/uiPreferences'
+import { useToast } from '@/modules/shared/composables/useToast'
 
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const uiPrefs = useUiPreferences()
+const toast = useToast()
 const { resumeIfActive } = useTrainerTracking()
 
+const impersonatedName = computed(() => {
+  const u = authStore.user
+  if (!u) return ''
+  return `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'user'
+})
+
+async function exitImpersonation() {
+  await authStore.stopImpersonation()
+  toast.success('Exited impersonation.')
+  router.push('/admin/users')
+}
+
+// The api.ts 401 interceptor fires this when an impersonation token expires.
+async function onImpersonationExpired() {
+  if (!authStore.impersonating) return
+  await authStore.stopImpersonation()
+  toast.warning('Impersonation session expired.')
+  router.push('/admin/users')
+}
+
+// Watch userId (not isAuthenticated): admin force-login swaps the user without
+// the auth boolean ever flipping, so a boolean watch would leave realtime stuck
+// on the admin's notification channel. connectRealtime() switches channels when
+// the id changes; a null id (logout) tears the connection down.
 watch(
-  () => authStore.isAuthenticated,
-  (authenticated) => {
-    if (authenticated) {
+  () => authStore.userId,
+  (userId) => {
+    if (userId) {
       notificationStore.connectRealtime()
       if (authStore.isTrainer) resumeIfActive()
     } else {
@@ -276,10 +325,12 @@ function handleResize() {
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  window.addEventListener('impersonation-expired', onImpersonationExpired)
   handleResize()
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('impersonation-expired', onImpersonationExpired)
 })
 </script>
